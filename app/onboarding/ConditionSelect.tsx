@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useInView, entryStyle } from "@/hooks/useInView";
 
 const CONDITIONS = [
   "Migraine",
@@ -41,8 +40,8 @@ export default function ConditionSelect({ onContinue }: Props) {
   const [otherText, setOtherText] = useState("");
   const [otherActive, setOtherActive] = useState(false);
 
-  // Scroll entry - observe the grid container; stagger each card
-  const { ref: gridRef, inView: gridVisible } = useInView();
+  // ConditionSelect is always above the fold - no scroll-triggered animation needed.
+  // Render buttons immediately visible and tappable.
 
   function toggle(condition: string) {
     setSelected((prev) => {
@@ -102,15 +101,12 @@ export default function ConditionSelect({ onContinue }: Props) {
         </p>
       </div>
 
-      {/* Condition grid - IntersectionObserver target for staggered entry */}
-      <div
-        ref={gridRef as React.RefObject<HTMLDivElement>}
-        className="grid grid-cols-2 gap-2 mb-4"
-      >
-        {CONDITIONS.map((condition, index) => {
+      {/* Condition grid */}
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        {CONDITIONS.map((condition) => {
           const isSelected = selected.has(condition);
           return (
-            <div key={condition} style={entryStyle(gridVisible, index)}>
+            <div key={condition}>
               {/* Double-Bezel card - outer shell */}
               <button
                 onClick={() => toggle(condition)}
@@ -156,8 +152,8 @@ export default function ConditionSelect({ onContinue }: Props) {
           );
         })}
 
-        {/* Other card - staggered after the 8 conditions */}
-        <div style={entryStyle(gridVisible, CONDITIONS.length)}>
+        {/* Other card */}
+        <div>
           <button
             onClick={toggleOther}
             className="w-full tap-feedback"
