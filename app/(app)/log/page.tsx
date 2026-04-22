@@ -441,7 +441,7 @@ export default function LogPage() {
             height: "56px",
             borderRadius: "1.25rem",
             backgroundColor: "var(--accent)",
-            color: "var(--accent-foreground)",
+            color: "#ffffff",
             fontFamily: "var(--font-body)",
             border: "none",
             cursor: saveState === "saved" ? "default" : "pointer",

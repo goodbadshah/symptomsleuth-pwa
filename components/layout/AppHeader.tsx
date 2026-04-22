@@ -24,15 +24,21 @@ export default function AppHeader({ showStreak = true }: { showStreak?: boolean 
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
-        paddingLeft: "20px",
-        paddingRight: "20px",
+        justifyContent: "center",
         position: "relative",
         zIndex: 10,
+        // Keep brand green identical in both themes — prevents browser forced-dark
+        // adjustments (Chrome Auto Dark, Safari smart invert) from desaturating
+        // the accent colour or inverting the wordmark PNG.
+        colorScheme: "light",
       }}
     >
       <Wordmark />
-      {showStreak && <StreakBadge />}
+      {showStreak && (
+        <div style={{ position: "absolute", right: "20px" }}>
+          <StreakBadge />
+        </div>
+      )}
     </header>
   );
 }
