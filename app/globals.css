@@ -107,10 +107,10 @@
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   --paper-noise-opacity: 0.05;
   --severity-0-border: #4a4845;
-  --bezel-outer-bg: rgba(255,255,255,0.04);
+  --bezel-outer-bg: var(--bg-surface);
   --nav-outer-bg: rgba(28,27,24,0.92);
-  --bezel-ring: rgba(255,255,255,0.07);
-  --bezel-inset-shadow: inset 0 1px 1px rgba(255,255,255,0.9);
+  --bezel-ring: var(--border);
+  --bezel-inset-shadow: none;
   --nav-active-color: #ffffff;
   --chip-text-none: #ffffff;
   --chip-text-mild: #ffffff;
@@ -139,10 +139,10 @@
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
     --paper-noise-opacity: 0.05;
     --severity-0-border: #4a4845;
-    --bezel-outer-bg: rgba(255,255,255,0.04);
+    --bezel-outer-bg: var(--bg-surface);
     --nav-outer-bg: rgba(28,27,24,0.92);
-    --bezel-ring: rgba(255,255,255,0.07);
-    --bezel-inset-shadow: inset 0 1px 1px rgba(255,255,255,0.9);
+    --bezel-ring: var(--border);
+    --bezel-inset-shadow: none;
     --nav-active-color: #ffffff;
     --chip-text-none: #ffffff;
     --chip-text-mild: #ffffff;

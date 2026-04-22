@@ -9,10 +9,9 @@ import SymptomSetup from "./SymptomSetup";
 import CommunityOptIn from "./CommunityOptIn";
 import PlanPicker from "./PlanPicker";
 import CardCollection from "./CardCollection";
-import FeatureShowcase from "./FeatureShowcase";
 import AppHeader from "@/components/layout/AppHeader";
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -65,30 +64,21 @@ export default function OnboardingPage() {
           onBack={() => setStep(2)}
         />
       )}
-      {(step === 4 || step === 5 || step === 6 || step === 7 || step === 8) && (
-        <FeatureShowcase
-          feature={(['log', 'ai', 'timeline', 'community', 'report'] as const)[step - 4]}
-          conditions={conditions}
-          stepIndex={step - 3}
-          onContinue={() => setStep((step + 1) as Step)}
-          onSkip={() => setStep(9)}
-        />
-      )}
-      {step === 9 && (
+      {step === 4 && (
         <PlanPicker
           selectedPlan={plan}
           onSelectPlan={setPlan}
-          onContinue={() => setStep(10)}
-          onBack={() => setStep(8)}
+          onContinue={() => setStep(5)}
+          onBack={() => setStep(3)}
           conditions={conditions}
           symptoms={symptoms}
           communityOptIn={communityOptIn}
         />
       )}
-      {step === 10 && (
+      {step === 5 && (
         <CardCollection
           plan={plan}
-          onBack={() => setStep(9)}
+          onBack={() => setStep(4)}
         />
       )}
       </div>
