@@ -1,26 +1,242 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background */
+  --bg-primary: #fafaf8;
+  --bg-surface: #ffffff;
+
+  /* Text */
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b6b6b;
+
+  /* Accent */
+  --accent: #2d6a4f;
+  --accent-light: #d8f3dc;
+
+  /* Severity scale - warmer palette (Editorial Stationery update) */
+  --severity-0-fill: transparent;
+  --severity-0-border: #d1d1ce;
+  --severity-1: #c5dfb8;                /* mild - olive-sage, warmer than mint */
+  --severity-2: #a8cc97;                /* moderate-low - warm sage */
+  --severity-3: #f4c95d;                /* moderate - mustard, not neon */
+  --severity-4: #e8823a;                /* significant - muted warm orange */
+  --severity-5: #c8472f;                /* severe - terracotta-leaning red */
+
+  /* Context slider (neutral gray - not severity colors) */
+  --context-slider-low: #d1d1ce;
+  --context-slider-high: #4a4a4a;
+
+  /* Border */
+  --border: #e8e8e4;
+
+  /* Premium locked surface */
+  --premium-locked: #f5f5f0;
+
+  /* Community insights */
+  --community: #4a90a4;
+
+  /* Shadow - warm-tinted, single level */
+  --shadow: 0 1px 3px rgba(26, 26, 26, 0.06);
+
+  /* Paper grain - applied only to app shell background, never on interactive surfaces */
+  --paper-noise-opacity: 0.03;
+
+  /* Double-bezel outer shell backgrounds */
+  --bezel-outer-bg: rgba(255,255,255,0.6);
+  --nav-outer-bg: rgba(250,250,248,0.88);
+
+  /* Double-bezel ring and inset highlight (adaptive to dark mode) */
+  --bezel-ring: rgba(0,0,0,0.06);
+  --bezel-inset-shadow: inset 0 1px 1px rgba(255,255,255,0.9);
+  /* Inner-core inset highlight (simulates paper depth) — dimmed in dark mode */
+  --bezel-inset-shadow: inset 0 1px 1px rgba(255,255,255,0.9);
+  /* Active nav tab text/icon colour — overridden to white in dark mode */
+  --nav-active-color: var(--accent);
+
+  /* Severity chip selected text (adapts to dark mode) */
+  --chip-text-none: var(--text-primary);
+  --chip-text-mild: var(--text-primary);
+  --chip-text-moderate: #3D6134;
+  --chip-text-severe: #7C5A0B;
+  --chip-text-extreme: #7A3010;
+  --chip-text-context: #4a4a4a;
+
+  /* Fonts */
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-dm-sans);
+  --font-mono: var(--font-dm-mono);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-surface: var(--bg-surface);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-severity-0-border: var(--severity-0-border);
+  --color-severity-1: var(--severity-1);
+  --color-severity-2: var(--severity-2);
+  --color-severity-3: var(--severity-3);
+  --color-severity-4: var(--severity-4);
+  --color-severity-5: var(--severity-5);
+  --color-context-slider-low: var(--context-slider-low);
+  --color-context-slider-high: var(--context-slider-high);
+  --color-border: var(--border);
+  --color-premium-locked: var(--premium-locked);
+  --color-community: var(--community);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-dm-mono);
+  --font-display: var(--font-fraunces);
 }
 
+/* ─── Dark Mode Token Overrides ───────────────────────────────────────────── */
+/* Applied when data-theme="dark" is set on <html> (explicit toggle)           */
+[data-theme="dark"] {
+  --bg-primary: #1c1b18;
+  --bg-surface: #242320;
+  --text-primary: #eeeae4;
+  --text-secondary: #8f8c84;
+  --accent: #2d6a4f;
+  --accent-light: #1a3828;
+  --border: #2e2c28;
+  --premium-locked: #1a1917;
+  --community: #5fafc4;
+  --context-slider-low: #3a3835;
+  --context-slider-high: #c5c1ba;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --paper-noise-opacity: 0.05;
+  --severity-0-border: #4a4845;
+  --bezel-outer-bg: rgba(255,255,255,0.04);
+  --nav-outer-bg: rgba(28,27,24,0.92);
+  --bezel-ring: rgba(255,255,255,0.07);
+  --bezel-inset-shadow: inset 0 1px 1px rgba(255,255,255,0.9);
+  --nav-active-color: #ffffff;
+  --chip-text-none: #ffffff;
+  --chip-text-mild: #ffffff;
+  --chip-text-moderate: #ffffff;
+  --chip-text-severe: #ffffff;
+  --chip-text-extreme: #ffffff;
+  --chip-text-context: #ffffff;
+  color-scheme: dark;
+}
+
+/* Applied when theme = 'system' and OS prefers dark                           */
+/* :not([data-theme="light"]) prevents this from firing when user chose light  */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  html:not([data-theme="light"]) {
+    --bg-primary: #1c1b18;
+    --bg-surface: #242320;
+    --text-primary: #eeeae4;
+    --text-secondary: #8f8c84;
+    --accent: #2d6a4f;
+    --accent-light: #1a3828;
+    --border: #2e2c28;
+    --premium-locked: #1a1917;
+    --community: #5fafc4;
+    --context-slider-low: #3a3835;
+    --context-slider-high: #c5c1ba;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    --paper-noise-opacity: 0.05;
+    --severity-0-border: #4a4845;
+    --bezel-outer-bg: rgba(255,255,255,0.04);
+    --nav-outer-bg: rgba(28,27,24,0.92);
+    --bezel-ring: rgba(255,255,255,0.07);
+    --bezel-inset-shadow: inset 0 1px 1px rgba(255,255,255,0.9);
+    --nav-active-color: #ffffff;
+    --chip-text-none: #ffffff;
+    --chip-text-mild: #ffffff;
+    --chip-text-moderate: #ffffff;
+    --chip-text-severe: #ffffff;
+    --chip-text-extreme: #ffffff;
+    --chip-text-context: #ffffff;
+    color-scheme: dark;
   }
 }
 
+html {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Food trigger chip label colors */
+.food-trigger-label {
+  color: var(--text-primary);
+}
+.food-trigger-label--selected {
+  color: var(--accent);
+}
+/* Dark mode: use charcoal background color on the light green fill for contrast */
+[data-theme="dark"] .food-trigger-label--selected {
+  color: var(--bg-primary);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .food-trigger-label--selected {
+    color: var(--bg-primary);
+  }
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    var(--bg-primary) 50%,
+    var(--border) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Tap feedback */
+.tap-feedback:active {
+  transform: scale(0.98);
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Row-level save confirmation - accent border pulse, opacity 1 → 0 */
+@keyframes accent-flash {
+  0% { opacity: 1; }
+  60% { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+/* Page entry fade — fires on mount via key-based remount in layout.tsx */
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.page-enter {
+  animation: page-fade-in 150ms ease-out both;
+}
+
+/* Hide browser default range thumb (the invisible input in SeveritySlider) */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0;
+  height: 0;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 0;
+  height: 0;
+  border: none;
 }

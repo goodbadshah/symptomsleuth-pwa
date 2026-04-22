@@ -1,0 +1,206 @@
+/**
+ * AI Sleuth - Condition-keyed sample questions
+ *
+ * Questions rotate by ISO week number + condition so a given user sees
+ * a new question each week. Written in first person, Fraunces-worthy at
+ * 22px weight 400, specific to each condition's typical concerns.
+ */
+
+export const aiSampleQuestions: Record<string, string[]> = {
+  Migraine: [
+    "What do my evening severity spikes have in common?",
+    "Is my sleep quality correlated with my headache days?",
+    "Which food triggers show up most on my worst days?",
+    "Do my migraines cluster on certain days of the week?",
+    "How does stress relate to my migraine frequency?",
+    "What's changed in the last 30 days compared to before?",
+    "On my worst days, what did I eat the night before?",
+    "Is there a pattern to when I get my longest pain-free stretches?",
+  ],
+  IBS: [
+    "What am I eating on my flare days?",
+    "Is stress a bigger trigger than food for me?",
+    "Do my symptoms follow a weekly pattern?",
+    "Which food triggers appear most before high-severity days?",
+    "How does my sleep quality affect my gut symptoms?",
+    "Are there days I consistently feel better - what's different?",
+    "What does my worst symptom week look like compared to my best?",
+  ],
+  Fibromyalgia: [
+    "Do my low-sleep days become high-pain days?",
+    "What's my worst symptom been this month?",
+    "How does exercise log on my lower-pain days versus higher-pain days?",
+    "Is there a pattern between stress and my flare frequency?",
+    "Which symptom has improved the most over my logged period?",
+    "When I log poor sleep two nights in a row, what happens next?",
+    "What does a typical low-pain day look like for me?",
+  ],
+  "Chronic Pain": [
+    "What do my lowest-pain days have in common?",
+    "Does my sleep quality predict tomorrow's pain level?",
+    "Which activities or triggers appear before my pain spikes?",
+    "How does stress appear in my high-severity entries?",
+    "What's changed in my pain patterns over the last month?",
+    "Are there days I consistently get relief - what's different about them?",
+    "How many high-severity days have I had in the last two weeks?",
+  ],
+  Anxiety: [
+    "What do my highest-anxiety days have in common?",
+    "Does poor sleep consistently precede my worst anxiety?",
+    "How does exercise appear in my lower-anxiety days?",
+    "Are there weekly patterns in when my anxiety peaks?",
+    "What do my calm days look like versus my difficult days?",
+    "How has my anxiety trended over the last 30 days?",
+    "What context factors appear most on my high-severity anxiety days?",
+  ],
+  Autoimmune: [
+    "What triggers appear most before my flare days?",
+    "Does my sleep quality correlate with my symptom severity?",
+    "How does stress affect my inflammatory symptoms?",
+    "Are there food triggers that consistently precede my worst days?",
+    "What do my remission periods look like in my data?",
+    "How long do my flares typically last based on my logs?",
+    "Which symptom has been most variable in the last month?",
+  ],
+  PCOS: [
+    "What do my highest-symptom weeks have in common?",
+    "Does my stress level track with my worst symptom days?",
+    "Are there food triggers that appear before my worst weeks?",
+    "How does my sleep quality relate to my symptom severity?",
+    "What patterns appear around my cycle in my logged data?",
+    "Which symptom has changed the most over my logged period?",
+    "What does a typical low-symptom day look like for me?",
+  ],
+  Endometriosis: [
+    "What patterns appear in my data around my highest-pain days?",
+    "Does sleep quality predict my pain severity the next day?",
+    "Which food triggers appear most frequently before flare days?",
+    "How does stress appear across my high-severity entries?",
+    "Are there specific days of my cycle when symptoms peak in my logs?",
+    "What does recovery after a high-severity day look like for me?",
+    "How many severe days have I logged in the last 30 days?",
+  ],
+  Hypertension: [
+    "What do my highest-severity days have in common?",
+    "How does stress correlate with my symptom severity?",
+    "Does my sleep quality relate to how I feel the next day?",
+    "Are there food triggers that appear before my worst days?",
+    "What patterns exist in my weekly severity rhythm?",
+    "How has my severity trended over the last month?",
+    "What do my lowest-symptom weeks have in common?",
+  ],
+  Obesity: [
+    "What do my highest-severity days have in common?",
+    "How does exercise appear on my lower-symptom days?",
+    "Which food triggers appear most on my difficult days?",
+    "Does my sleep quality affect how I feel the next day?",
+    "What patterns exist in my symptom severity week to week?",
+    "What does a typical good day look like in my logs?",
+    "How has my overall severity trended over my logged period?",
+  ],
+  Depression: [
+    "What do my lowest-severity days have in common?",
+    "How does sleep quality relate to my next-day mood symptoms?",
+    "Does exercise appear more on my better days?",
+    "Are there weekly patterns in when my symptoms are heaviest?",
+    "What has changed in the last 30 days compared to the 30 before?",
+    "What do my better stretches have in common?",
+    "How does stress appear across my high-severity entries?",
+  ],
+  Arthritis: [
+    "What do my highest-pain days have in common?",
+    "How does sleep quality track with my joint pain the next day?",
+    "Does exercise appear differently on low-pain versus high-pain days?",
+    "Are there food triggers that consistently precede my worst days?",
+    "What patterns exist in my weekly pain rhythm?",
+    "How has my pain severity trended over my logged period?",
+    "What does recovery from a bad pain day look like in my data?",
+  ],
+  "Type 2 Diabetes": [
+    "What do my highest-severity days have in common?",
+    "Which food triggers appear most before my worst symptom days?",
+    "How does exercise appear on my lower-severity days?",
+    "Does my sleep quality correlate with my next-day symptoms?",
+    "Are there patterns in when I feel best each week?",
+    "How has my severity trended over the last month?",
+    "What does a typical low-symptom day look like for me?",
+  ],
+  COPD: [
+    "What do my highest-symptom days have in common?",
+    "How does exercise appear across my better and worse days?",
+    "Does sleep quality predict my symptom severity the next day?",
+    "Are there environmental or food triggers in my worst days?",
+    "What patterns exist in my weekly symptom rhythm?",
+    "How has my severity trended over my logged period?",
+    "What do my lowest-symptom stretches have in common?",
+  ],
+  Asthma: [
+    "What conditions or triggers appear before my worst symptom days?",
+    "How does exercise appear in my log around high-severity days?",
+    "Does poor sleep consistently lead to worse symptoms the next day?",
+    "Are there food triggers that precede my flares?",
+    "What do my symptom-free stretches have in common?",
+    "How has my severity trended over the last 30 days?",
+    "What does a typical flare day look like in my data?",
+  ],
+  "Heart Disease": [
+    "What do my highest-severity days have in common?",
+    "How does stress appear across my worst symptom entries?",
+    "Does sleep quality correlate with my next-day symptoms?",
+    "Are there exercise patterns on my better days?",
+    "What triggers appear most before my most difficult days?",
+    "How has my severity changed over my logged period?",
+    "What do my lowest-symptom weeks look like?",
+  ],
+  "Chronic Kidney Disease": [
+    "What do my highest-severity days have in common?",
+    "Which food triggers appear most before my worst days?",
+    "How does sleep quality relate to my symptom severity?",
+    "Does stress appear in my high-severity entries?",
+    "What patterns exist in my weekly symptom rhythm?",
+    "How has my severity trended over my logged period?",
+    "What does a typical lower-symptom day look like for me?",
+  ],
+  "Thyroid Disease": [
+    "What do my highest-symptom days have in common?",
+    "How does sleep quality correlate with my daily symptoms?",
+    "Are there food triggers that appear before my worst days?",
+    "Does stress appear differently on high versus low symptom days?",
+    "What patterns exist in my weekly severity rhythm?",
+    "How has my severity changed over the last month?",
+    "What do my lowest-symptom stretches have in common?",
+  ],
+  IBD: [
+    "What am I eating on my worst flare days?",
+    "Is stress a bigger pattern in my data than food triggers?",
+    "How does sleep quality relate to my digestive symptoms?",
+    "Which food triggers appear most before my high-severity days?",
+    "Are there days I consistently feel better - what's different?",
+    "How long do my flares typically last in my logged data?",
+    "What does my best symptom week look like compared to my worst?",
+  ],
+  Other: [
+    "What do my highest-severity days have in common?",
+    "Does my sleep quality predict my symptom severity the next day?",
+    "Which context factors appear most on my worst days?",
+    "How does stress appear across my high-severity entries?",
+    "Are there food triggers that precede my most difficult days?",
+    "What patterns exist in my weekly symptom rhythm?",
+    "What do my lowest-symptom stretches have in common?",
+    "How has my severity trended over the last 30 days?",
+  ],
+};
+
+/**
+ * Returns the sample question for a given condition and ISO week number.
+ * Deterministic - the same condition + weekNumber always returns the same question.
+ * Rotates across questions week by week.
+ */
+export function getSampleQuestionForWeek(
+  condition: string,
+  weekNumber: number
+): string {
+  const questions =
+    aiSampleQuestions[condition] ?? aiSampleQuestions["Other"];
+  return questions[weekNumber % questions.length];
+}
