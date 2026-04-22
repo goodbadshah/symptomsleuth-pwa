@@ -175,9 +175,9 @@ export default function LogPage() {
     }
   }
 
-  const useGrouping = conditions.length > 2;
+  const useGrouping = true;
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    () => new Set(useGrouping ? groups.map((g) => g.condition) : [])
+    () => new Set(conditions.length >= 2 ? groups.map((g) => g.condition) : [])
   );
 
   function toggleGroup(condition: string) {
