@@ -40,9 +40,6 @@ export default function ConditionSelect({ onContinue }: Props) {
   const [otherText, setOtherText] = useState("");
   const [otherActive, setOtherActive] = useState(false);
 
-  // ConditionSelect is always above the fold - no scroll-triggered animation needed.
-  // Render buttons immediately visible and tappable.
-
   function toggle(condition: string) {
     setSelected((prev) => {
       const next = new Set(prev);

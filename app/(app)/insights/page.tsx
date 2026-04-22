@@ -205,18 +205,14 @@ export default function InsightsPage() {
 
   const condition = profile.conditions[0] ?? "Other";
   const weekNumber = getISOWeek(new Date());
-
-  // State A: day 0 - no logs yet
-  if (loggedDaysCount === 0) {
-    return <EmptyTrailState />;
-  }
+  const hasNoLogs = loggedDaysCount === 0;
 
   return (
     <div style={{ paddingBottom: 24 }}>
       {/* Hero */}
       <HeroDateBlock
         heading="Insights"
-        secondary={`Week ${Math.max(1, Math.ceil(loggedDaysCount / 7))}`}
+        secondary={hasNoLogs ? "No entries yet" : `Week ${Math.max(1, Math.ceil(loggedDaysCount / 7))}`}
       />
 
       {/* Segmented control */}
@@ -227,14 +223,15 @@ export default function InsightsPage() {
         <TimelineSegment logs={logs} symptoms={profile.symptoms} isPremium={isPremium} />
       )}
 
-      {/* AI segment - four internal states */}
+      {/* AI segment - four internal states (empty state rendered inline when no logs) */}
       {activeSegment === "ai" && (
         <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
-          {hasAIAccess && <AIChat loggedDaysCount={loggedDaysCount} />}
-          {isAIThresholdMet && !isPremium && (
+          {hasNoLogs && <EmptyTrailState />}
+          {!hasNoLogs && hasAIAccess && <AIChat loggedDaysCount={loggedDaysCount} />}
+          {!hasNoLogs && isAIThresholdMet && !isPremium && (
             <AILockedPreview logs={logs} conditions={profile.conditions} />
           )}
-          {!isAIThresholdMet && (
+          {!hasNoLogs && !isAIThresholdMet && (
             <>
               <AIPreviewCard
                 condition={condition}
