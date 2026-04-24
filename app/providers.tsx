@@ -12,7 +12,7 @@ import { readStorage, writeStorage } from "@/utils/storage";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PremiumStatus {
-  type: "none" | "monthly" | "annual";
+  type: "none" | "monthly" | "annual" | "lifetime";
   stripeSubscriptionId?: string;
   expiresAt?: string;
 }
@@ -89,6 +89,7 @@ export type AppAction =
   | { type: "HYDRATE"; payload: AppState }
   | { type: "SET_USER_ID"; payload: string }
   | { type: "SET_TRIAL_DATA"; payload: { subscriptionId: string; customerId: string; email: string; trialEndsAt: string; plan: "monthly" | "annual" } }
+  | { type: "SET_LIFETIME"; payload: { customerId: string; email: string } }
   | { type: "SET_CONDITIONS"; payload: string[] }
   | { type: "SET_SYMPTOMS"; payload: Symptom[] }
   | { type: "SET_COMMUNITY_OPT_IN"; payload: boolean }
@@ -127,6 +128,19 @@ function appReducer(state: AppState, action: AppAction): AppState {
             stripeSubscriptionId: subscriptionId,
             expiresAt: trialEndsAt,
           },
+        },
+      };
+    }
+
+    case "SET_LIFETIME": {
+      const { customerId, email } = action.payload;
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          email,
+          stripeCustomerId: customerId,
+          premium: { type: "lifetime" },
         },
       };
     }

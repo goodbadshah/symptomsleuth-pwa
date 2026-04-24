@@ -21,7 +21,30 @@ export default function OnboardingPage() {
   const [conditions, setConditions] = useState<string[]>([]);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [communityOptIn, setCommunityOptIn] = useState(true);
-  const [plan, setPlan] = useState<"monthly" | "annual">("annual");
+  const [plan, setPlan] = useState<"monthly" | "annual" | "lifetime">("annual");
+
+  async function handlePlanContinue() {
+    if (plan === "lifetime") {
+      try {
+        const res = await fetch("/api/create-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            plan: "lifetime",
+            email: state.profile.email,
+            customerId: state.profile.stripeCustomerId,
+          }),
+        });
+        if (!res.ok) throw new Error();
+        const { url } = (await res.json()) as { url: string };
+        window.location.href = url;
+      } catch {
+        router.push("/upgrade");
+      }
+    } else {
+      setStep(5);
+    }
+  }
 
   // If onboarding already completed (stripeCustomerId set), go straight to app
   useEffect(() => {
@@ -68,16 +91,16 @@ export default function OnboardingPage() {
         <PlanPicker
           selectedPlan={plan}
           onSelectPlan={setPlan}
-          onContinue={() => setStep(5)}
+          onContinue={handlePlanContinue}
           onBack={() => setStep(3)}
           conditions={conditions}
           symptoms={symptoms}
           communityOptIn={communityOptIn}
         />
       )}
-      {step === 5 && (
+      {step === 5 && plan !== "lifetime" && (
         <CardCollection
-          plan={plan}
+          plan={plan as "monthly" | "annual"}
           onBack={() => setStep(4)}
         />
       )}

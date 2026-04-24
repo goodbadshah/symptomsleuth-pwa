@@ -224,15 +224,15 @@ export default function CardCollection({ plan, onBack }: Props) {
         style={{
           padding: "6px",
           borderRadius: "1.25rem",
-          boxShadow: "0 0 0 1px rgba(0,0,0,0.06)",
-          backgroundColor: "rgba(255,255,255,0.6)",
+          boxShadow: "0 0 0 1px var(--bezel-ring)",
+          backgroundColor: "var(--bezel-outer-bg)",
           marginBottom: "24px",
         }}
       >
         <div
           style={{
             backgroundColor: "var(--bg-surface)",
-            boxShadow: "inset 0 1px 1px rgba(255,255,255,0.9)",
+            boxShadow: "var(--bezel-inset-shadow)",
             borderRadius: "0.875rem",
             padding: "20px 18px",
           }}

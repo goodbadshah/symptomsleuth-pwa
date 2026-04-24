@@ -112,7 +112,7 @@ function TrialActivatedContent() {
             className="text-xl text-center"
             style={{ fontFamily: "var(--font-display)", color: "var(--text-secondary)", fontWeight: 400 }}
           >
-            Your 7-day trial has started.
+            Your {params.get("plan") === "annual" ? "14" : "7"}-day trial has started.
           </p>
         </>
       )}

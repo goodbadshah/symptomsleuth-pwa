@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SymptomSleuth is a PWA that helps people with chronic conditions (migraine, IBS, fibromyalgia, autoimmune disorders, chronic pain, PCOS, endometriosis, hypertension, obesity, periodontal disease, depression, arthritis, type 2 diabetes, COPD, asthma, heart disease, chronic kidney disease, cancer, dementia & Alzheimer's, stroke, osteoporosis, atrial fibrillation, liver disease, thyroid disease, IBD) log daily symptoms in under 10 seconds, generate structured doctor reports, and see how their patterns compare to thousands of others with the same condition. Personal data stays on-device via localStorage with optional encrypted cloud backup the user controls. Anonymous, aggregated pattern data powers a community intelligence layer that gets smarter with every user. Monetized via a 7-day/14-day reverse trial → $6.99/month or $29.99/year subscription via Stripe.
+SymptomSleuth is a PWA that helps people with chronic conditions (migraine, IBS, fibromyalgia, autoimmune disorders, chronic pain, PCOS, endometriosis, hypertension, obesity, periodontal disease, depression, arthritis, type 2 diabetes, COPD, asthma, heart disease, chronic kidney disease, cancer, dementia & Alzheimer's, stroke, osteoporosis, atrial fibrillation, liver disease, thyroid disease, IBD) log daily symptoms in under 10 seconds, generate structured doctor reports, and see how their patterns compare to thousands of others with the same condition. Personal data stays on-device via localStorage with optional encrypted cloud backup the user controls. Anonymous, aggregated pattern data powers a community intelligence layer that gets smarter with every user. Monetized via a reverse trial into one of three plans: $39.99/year (14-day trial, primary), $9.99/month (7-day trial, secondary), or a $79.99 one-time lifetime purchase (no trial). All payments via Stripe.
 
 ## Tech Stack
 
@@ -10,7 +10,7 @@ SymptomSleuth is a PWA that helps people with chronic conditions (migraine, IBS,
 - **Styling:** Tailwind CSS
 - **Charts:** Recharts for symptom timeline visualization
 - **AI:** Anthropic Claude API (claude-sonnet-4-5-20250929) for doctor report generation, AI Sleuth chat, and pattern narrative
-- **Payments:** Stripe Checkout (subscription only - monthly and annual)
+- **Payments:** Stripe Checkout Sessions (subscription mode for annual/monthly; payment mode for lifetime)
 - **Auth:** Supabase Auth - Google OAuth, Facebook OAuth, and anonymous (UUID) fallback. No email required. `auth.uid` is the permanent user identifier used for Stripe and cloud sync.
 - **Backend:** Supabase (anonymous community data aggregation, pattern computation, encrypted profile sync)
 - **Hosting:** Vercel
@@ -90,7 +90,7 @@ Glyphs render at `currentColor` so they inherit the chip's text color (which shi
 
 The app is laid out like a well-designed personal journal, not a dashboard. Five patterns govern the editorial feel - apply each where relevant:
 
-**1. Hero date treatment.** Every primary screen (Log, Insights, Report) opens with a Fraunces 44px weight 400 date or section title as the first element below the header. Below it, a single line of DM Mono 12px `--text-secondary` context - e.g., "Day 23 · Last logged yesterday" on Log, "Week 4 · Trail of 23 days" on Insights. This line is dynamic and derived from user state. No decoration, no icons - the typography is the decoration.
+**1. Hero date treatment.** Every primary screen (Log, Insights, Report) opens with a Fraunces 44px weight 400 date or section title as the first element below the header. Below it, a single line of DM Mono 12px `--text-secondary` context - e.g., "Day 23 · Last logged yesterday" on Log, "Week 4 · 23 days logged" on Insights. This line is dynamic and derived from user state. No decoration, no icons - the typography is the decoration.
 
 **2. Eyebrow + Title + Hairline stack for condition groups.** Condition headers inside the Log screen (currently styled as a grey pill reading "MIGRAINE") are replaced with a chapter-marker treatment: a 1px `--border` hairline rule running the inner card width, with the condition name centered on the rule in DM Sans 10px uppercase, tracked `0.15em`, `--accent` color, with 8px of negative space around the text so the rule visually breaks around it. This is a classic editorial device - treat each condition as a chapter of the day's entry.
 
@@ -259,12 +259,36 @@ The distinction between severity-0 (unlogged/None) and severity-1 (Mild) must al
 
 Every interactive container - symptom rows, condition cards, context section, paywall card, insight cards, the Save button, input fields, the bottom nav - must use nested enclosure. Elements must look physical, not painted onto a flat surface.
 
+**Do not hardcode bezel values. Always use the CSS variables defined in `app/globals.css`. They adapt automatically to dark mode.**
+
 ```
-Outer shell: ring-1 ring-black/[0.04]  bg-white/60  p-1.5  rounded-[1.25rem]
-Inner core:  bg-[--bg-surface]  shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)]  rounded-[calc(1.25rem-0.375rem)]
+Outer shell: padding 6px  border-radius 1.25rem
+  box-shadow: 0 0 0 1px var(--bezel-ring)          ← adapts in dark mode
+  background-color: var(--bezel-outer-bg)           ← adapts in dark mode
+
+Inner core:  border-radius 0.875rem  (= 1.25rem − 0.375rem, concentric-smaller)
+  background-color: var(--bg-surface)
+  box-shadow: var(--bezel-inset-shadow)             ← none in dark mode (no white highlight)
 ```
 
-This is the warm palette version - not glass, not dark. The inset highlight simulates the physical upper-left light catch of a machined surface. The concentric radii (mathematically calculated smaller inner radius) signal precision craft. Apply at every level of nesting: the app shell itself, section containers, individual rows, and interactive controls.
+**CSS utility classes** (preferred for new components — avoids inline repetition):
+```html
+<div class="bezel-outer">
+  <div class="bezel-inner p-4">
+    content
+  </div>
+</div>
+```
+
+**Token values** (defined in `:root` and `[data-theme="dark"]` in `globals.css`):
+
+| Token | Light | Dark |
+|---|---|---|
+| `--bezel-outer-bg` | `rgba(255,255,255,0.6)` | `var(--bg-surface)` |
+| `--bezel-ring` | `rgba(0,0,0,0.06)` | `var(--border)` |
+| `--bezel-inset-shadow` | `inset 0 1px 1px rgba(255,255,255,0.9)` | `none` |
+
+**Never hardcode** `rgba(255,255,255,0.6)`, `rgba(0,0,0,0.06)`, or `inset 0 1px 1px rgba(255,255,255,0.9)` in component files. All three onboarding screens (ConditionSelect, CommunityOptIn, PlanPicker, CardCollection) and all app components use the tokens above.
 
 - **Symptom rows:** outer shell wraps each row group, inner core holds the name + slider
 - **Condition cards (onboarding):** outer shell with green tint when selected (`ring-[--accent]/20 bg-[--accent-light]/30`)
@@ -425,9 +449,10 @@ interface AIUsage {
 }
 
 interface PremiumStatus {
-  type: 'none' | 'monthly' | 'annual';
-  stripeSubscriptionId?: string;
-  expiresAt?: string;               // ISO date - current period end
+  type: 'none' | 'monthly' | 'annual' | 'lifetime';
+  stripeSubscriptionId?: string;    // annual/monthly only
+  stripeCustomerId?: string;        // tracked on the profile for all paid types
+  expiresAt?: string;               // ISO date - current period end (annual/monthly). Undefined for lifetime — lifetime never expires.
 }
 
 interface Symptom {
@@ -515,7 +540,7 @@ interface Correlation {
 ### AI Sleuth - Access, Cost, and Safety
 
 **Access model:**
-- AI chat ("Trail") unlocks when `loggedDaysCount >= 14` AND `totalLogEntries >= 20`, AND user is premium.
+- AI chat ("Sleuth") unlocks when `loggedDaysCount >= 14` AND `totalLogEntries >= 20`, AND user is premium.
 - The dual data gate prevents low-signal users from hitting a useless AI experience that damages trust.
 - Previews and data-derived teasers shown below threshold are computed client-side from localStorage - zero API spend on non-premium or below-threshold users.
 
@@ -548,10 +573,12 @@ interface Correlation {
 
 ```
 trialStartDate = profile.createdAt
-trialEndDate = trialStartDate + 7 days
-isTrialActive = now < trialEndDate
+trialLengthDays = (selected plan === 'annual') ? 14 : 7   // lifetime has no trial
+trialEndDate = trialStartDate + trialLengthDays
+isTrialActive = now < trialEndDate  // lifetime bypasses this - immediate access
 
 isPremium:
+  - If premium.type === 'lifetime' → true (never expires)
   - If premium.type === 'monthly' && premium.expiresAt > now → true
   - If premium.type === 'annual' && premium.expiresAt > now → true
   - If isTrialActive (profile.trialEndsAt > now, or trialEndsAt not set and createdAt + 7d > now) → true
@@ -829,7 +856,7 @@ This is the daily "what is my data telling me?" surface. From day 4 onward, this
 **Architecture - segmented control:** Insights is a single screen with three segments navigated by a compact segmented control rendered directly below the HeroDateBlock in all non-empty states:
 
 - **Timeline** (default) - the date-range chart and daily log list. Uses the composable `TimelineSegment` wrapper from `components/timeline/`. Default-selected on every cold open to preserve existing navigation muscle memory.
-- **AI** - the Trail AI surface. Contains the four states (A/B/C/D) defined below, based on data threshold and premium status.
+- **AI** - the Sleuth AI surface. Contains the four states (A/B/C/D) defined below, based on data threshold and premium status.
 - **Community** - shows `CommunityOverview` from `components/insights/`. Free for all users.
 
 The segmented control uses text tabs with an underline indicator in `--accent` (same visual language as the date range tabs). Not pills. Compact row, ~36px height, DM Sans 13px weight 500.
@@ -887,11 +914,11 @@ The AIPreviewCard transforms into the live **AIChat** surface. Community is in t
 **AIChat component (`components/insights/AIChat.tsx`):**
 
 - Double-bezel container - same outer dimensions as AIPreviewCard so the lock→live transition feels like the card "came online" rather than a new component appearing
-- Eyebrow pill (accent variant - `bg-[--accent-light]` with `text-[--accent]`): "TRAIL"
+- Eyebrow pill (accent variant - `bg-[--accent-light]` with `text-[--accent]`): "SLEUTH"
 - Top-right inside the card: "New conversation" text button, DM Sans 12px `--text-secondary`, clears current session. No confirmation modal.
 - Conversation area (max-height 480px, scroll-y; most recent turn at bottom, auto-scrolls on new message):
   - **User turns:** right-aligned, DM Sans 15px `--text-primary`, no background, left-padding of 48px so user text reads as quoted. No avatar, no label, no timestamp.
-  - **AI turns:** left-aligned, DM Sans 15px `--text-primary`, prefix with a small `--accent`-colored dot (8px) as the speaker indicator. No avatar, no "Trail says" label.
+  - **AI turns:** left-aligned, DM Sans 15px `--text-primary`, prefix with a small `--accent`-colored dot (8px) as the speaker indicator. No avatar, no "Sleuth says" label.
   - Between turns: 16px vertical gap. Inside a turn: paragraphs separate with 8px gap.
   - AI responses may contain inline severity references - render the Severity Glyph inline where the AI response text mentions a specific severity level (the API post-processor handles this substitution).
 - Bottom input area (anchored to card bottom):
@@ -900,12 +927,12 @@ The AIPreviewCard transforms into the live **AIChat** surface. Community is in t
   - Trailing send button inside the textarea bezel (button-in-button style, `--accent` fill, Phosphor ArrowUp 14px weight light)
 - Empty state (first open, `aiConversationCount === 0`):
   - Fraunces 22px: "Your sleuth works for you."
-  - DM Sans 14px `--text-secondary`: "Ask about your patterns, triggers, or symptoms. Trail reads your {loggedDaysCount} days of data - never your notes field unless you ask."
+  - DM Sans 14px `--text-secondary`: "Ask about your patterns, triggers, or symptoms. Sleuth reads your {loggedDaysCount} days of data - never your notes field unless you ask."
   - Three starter chips beneath
-  - Footnote (DM Sans 11px `--text-secondary`): "Trail is not a doctor. For medical decisions, use the Doctor Report and see your clinician."
+  - Footnote (DM Sans 11px `--text-secondary`): "Sleuth is not a doctor. For medical decisions, use the Doctor Report and see your clinician."
 
 **Rate limit UI (when 20/24h cap hit):**
-- Input area replaced with a centered message: "You've asked 20 questions in the last day. Trail resets in {Xh Ym}."
+- Input area replaced with a centered message: "You've asked 20 questions in the last day. Sleuth resets in {Xh Ym}."
 - DM Sans 14px `--text-secondary`, no CTA, no upgrade push
 - Countdown recomputes on each render from `profile.aiUsage.messages[]`
 
@@ -921,8 +948,8 @@ The AIChat card is present but locked. This is a stronger paywall than the gener
   - "Stress appears in 60% of your high-severity entries."
 - This insight is generated client-side from simple statistics in `utils/aiPreviewStats.ts` - zero Claude API spend on non-premium users.
 - Below: a three-line "answer preview" - first ~40 words of what a correlation response might look like, first line fully readable, next two lines blurred via `filter: blur(4px)`.
-- Primary CTA (sage green button-in-button, trailing arrow): "Unlock Sleuth - $6.99/month" → routes to /upgrade
-- Secondary text beneath (DM Sans 12px `--text-secondary`): "Your 14 days of data stay private. Trail only reads what you ask it to see."
+- Primary CTA (sage green button-in-button, trailing arrow): "Unlock Sleuth" → routes to /upgrade
+- Secondary text beneath (DM Sans 12px `--text-secondary`): "Your 14 days of data stay private. Sleuth only reads what you ask it to see."
 - Community is always available in the Community segment tab - free tier users keep community access.
 
 **5. Doctor Report**
@@ -938,22 +965,30 @@ The AIChat card is present but locked. This is a stronger paywall than the gener
 The Account tab surfaces auth, subscription, and settings - the chrome that previously had no permanent home in the four-tab nav.
 
 - **Auth state:** shows current auth method (Google, Facebook, or anonymous UUID). If anonymous: CTA "Sync your data" to connect Google/Facebook. If authenticated: email/provider shown in DM Mono small.
-- **Subscription:** current plan badge (trial / monthly / annual / expired), trial end date if active, "Manage plan" link → Stripe customer portal.
+- **Subscription:** current plan badge (trial / monthly / annual / lifetime / expired), trial or renewal date if applicable. "Manage plan" link → Stripe customer portal for annual and monthly subscribers only. Lifetime members show a "Lifetime Member ✦" badge with no manage link — the subscription has no renewal to manage.
 - **Settings:** Community data opt-in toggle wired to `profile.communityOptIn` via `SET_COMMUNITY_OPT_IN` dispatch.
 - **Data:** "Reset account" - two-tap confirmation; clears localStorage, routes to `/onboarding`. This action moves here from its previous location in Insights.
 - Design: `divide-y` rows with section eyebrow tags, no card elevation. Route: `app/(app)/account/page.tsx`.
 
 **7. Paywall / Upgrade Screen**
 
-- Appears when accessing locked features
-- "Your 7 days of full access ended"
-- Anchor: "The average migraine patient spends $8,500/year managing their condition. SymptomSleuth helps you understand your patterns for less than a single copay."
-- Value prop: clean vertical list (not a feature grid)
-- Pricing: vertically stacked, both full-width
-  - PRIMARY (sage green button): "$6.99/month" - "Start Monthly Plan"
-  - SECONDARY (outlined button): "$29.99/year" with "14-day free trial" badge - "Start Annual Plan"
-- Trust text: "Your data never leaves your device. Payment secured by Stripe."
-- NO lifetime tier. NO urgency tactics. NO countdown timers.
+Route: `app/(app)/upgrade/page.tsx`. Appears when a non-premium user taps a locked feature, and directly from the AILockedPreview CTA.
+
+Visual hierarchy — annual is the no-brainer choice:
+
+- **Annual card (primary, dominant):** full-width, sage-green filled card, "BEST VALUE" pill top-left. Price: "$39.99 / year" in Fraunces, subline "That's just $3.33/month" in DM Mono, trial callout "14-day free trial included". Primary CTA: "Start Free Trial" — high-contrast white button inside the green card.
+- **Monthly card (secondary, recessive):** smaller weight, standard double-bezel card on the warm surface. Price: "$9.99 / month" + trial callout "7-day free trial". CTA: "Try Monthly" (outlined/ghost).
+- **Lifetime link (tertiary):** rendered as a subdued centered text link below both cards, not a card. Copy: "Prefer to pay once? $79.99 lifetime access →". No trial language.
+- **Trust line beneath all options:** "Cancel anytime. Your data is always yours."
+
+Checkout flow:
+1. CTA → POST `/api/create-checkout` with `{ plan: 'annual' | 'monthly' | 'lifetime', email?, customerId? }`
+2. Server creates a Stripe Checkout Session (subscription mode for annual/monthly with `trial_period_days: 14` or `7`; payment mode for lifetime) and returns its URL
+3. Client redirects the browser to the Stripe-hosted checkout
+4. On success, Stripe redirects to `/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=...`
+5. The payment-success page retrieves the session via `/api/confirm-checkout`, dispatches `SET_TRIAL_DATA` (annual/monthly) or `SET_LIFETIME` (lifetime), then navigates to `/log`
+
+NO urgency tactics. NO countdown timers.
 
 ### API Integration
 
@@ -976,9 +1011,12 @@ The Account tab surfaces auth, subscription, and settings - the chrome that prev
 - No conversation persistence server-side - session-scoped only
 
 **Stripe:**
-- Monthly: $6.99/month | Annual: $29.99/year
-- Webhook handles: checkout.session.completed, customer.subscription.deleted, invoice.payment_failed, invoice.payment_succeeded
-- Customer Portal link in settings
+- Annual (primary): $39.99/year, 14-day free trial — `STRIPE_ANNUAL_PRICE_ID`
+- Monthly (secondary): $9.99/month, 7-day free trial — `STRIPE_MONTHLY_PRICE_ID`
+- Lifetime (tertiary): $79.99 one-time, no trial — `STRIPE_LIFETIME_PRICE_ID`
+- Checkout route (`/api/create-checkout`) accepts `plan: 'annual' | 'monthly' | 'lifetime'` and creates the appropriate Stripe Checkout Session (subscription mode with trial for annual/monthly; payment mode for lifetime).
+- Webhook (`/api/stripe-webhook`) handles: `checkout.session.completed`, `customer.subscription.deleted`, `invoice.payment_failed`.
+- Customer Portal link in Account settings — shown for annual and monthly subscribers only. Lifetime members have no renewal to manage, so the portal link is hidden and a "Lifetime Member ✦" badge renders instead.
 
 **Supabase (Community Data):**
 - Anonymous inserts on save (if communityOptIn)
@@ -1146,5 +1184,5 @@ This section is non-negotiable.
 ## Deployment
 
 - Vercel (zero config)
-- Environment variables: ANTHROPIC_API_KEY (shared by /api/generate-report and /api/ai-chat), STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_MONTHLY_PRICE_ID, STRIPE_ANNUAL_PRICE_ID, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SYNC_SERVER_PEPPER
+- Environment variables: ANTHROPIC_API_KEY (shared by /api/generate-report and /api/ai-chat), STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_ANNUAL_PRICE_ID, STRIPE_MONTHLY_PRICE_ID, STRIPE_LIFETIME_PRICE_ID, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SYNC_SERVER_PEPPER
 - Landing page (app/page.tsx) server-rendered; all app screens under (app)/ are client components

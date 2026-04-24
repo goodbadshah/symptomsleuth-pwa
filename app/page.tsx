@@ -174,7 +174,7 @@ export default function LandingPage() {
         </Link>
 
         <p className="text-base" style={{ color: "var(--text-secondary)" }}>
-          7-day free trial, then $6.99/month or $29.99/year. Cancel anytime.
+          14-day free trial on annual ($39.99/yr), or $9.99/month. Cancel anytime.
         </p>
       </section>
       </main>

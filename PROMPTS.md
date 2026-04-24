@@ -32,8 +32,9 @@ Initialize a new Next.js 14+ project with App Router and TypeScript called "symp
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 STRIPE_SECRET_KEY=sk_test_your-key-here
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your-key-here
-STRIPE_MONTHLY_PRICE_ID=price_your-monthly-price-id-here
 STRIPE_ANNUAL_PRICE_ID=price_your-annual-price-id-here
+STRIPE_MONTHLY_PRICE_ID=price_your-monthly-price-id-here
+STRIPE_LIFETIME_PRICE_ID=price_your-lifetime-price-id-here
 STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret-here
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
@@ -75,8 +76,8 @@ Screen 4 - Plan Picker:
 - Heading in Fraunces (weight 400): "You’re ready."
 - Subheading in DM Sans secondary: "Choose a plan. No charge for 7 days."
 - Two plan option cards, vertically stacked, tappable. Annual shown first (selected by default):
-  - Annual: "$29.99/year" with "14-day free trial" pill tag (accent-light background, accent text). Subtext: "$2.50/month, billed annually."
-  - Monthly: "$6.99/month"
+  - Annual: "$39.99/year" with "14-day free trial" pill tag (accent-light background, accent text). Subtext: "$3.33/month, billed annually."
+  - Monthly: "$9.99/month"
 - Selected card: sage green border + faint green wash (same as condition card selected state). Unselected: --border color.
 - Brief features list (4 items, same as before): Full symptom history, Community insights, Doctor-ready reports, Track multiple conditions.
 - "Continue" CTA → advances to Screen 5 with chosen plan.
@@ -108,7 +109,7 @@ Screen 5 - Card Collection:
 
 Create API routes:
 - app/api/create-setup-intent/route.ts: creates a Stripe SetupIntent (mode: 'setup', payment_method_types: ['card']). Returns { clientSecret }.
-- app/api/activate-trial/route.ts: accepts { setupIntentId, plan, email }. Retrieves SetupIntent from Stripe to get payment_method id. Creates Stripe Customer with email. Creates Stripe Subscription with the payment method, trial_period_days: 7, and the correct price ID (STRIPE_MONTHLY_PRICE_ID or STRIPE_ANNUAL_PRICE_ID). Returns { subscriptionId, customerId, trialEndsAt }.
+- app/api/activate-trial/route.ts: accepts { setupIntentId, plan, email } where plan is 'annual' or 'monthly'. Retrieves SetupIntent from Stripe to get payment_method id. Creates Stripe Customer with email. Creates Stripe Subscription with the payment method, trial_period_days (14 for annual, 7 for monthly), and the correct price ID (STRIPE_ANNUAL_PRICE_ID or STRIPE_MONTHLY_PRICE_ID). Returns { subscriptionId, customerId, trialEndsAt }.
 
 Create utils/symptoms.ts with sensible default symptom suggestions for each condition (5–8 per condition, covering all 26 supported conditions plus Other). Onboarding state should be tracked so it only shows once (check profile.stripeCustomerId in localStorage on app load - if set, user has completed onboarding).
 ```
@@ -474,7 +475,7 @@ Export a helper `getSampleQuestionForWeek(condition: string, weekNumber: number)
 Export a function `buildAISystemPrompt({ conditions, loggedDaysCount, totalLogEntries }): string` that returns the system prompt string. The prompt must include:
 
 - Role: "You are Sleuth, SymptomSleuth's data analyst. You read the user's own symptom logs and help them see patterns."
-- Explicit scope: Trail observes patterns in the user's logged data. It does NOT diagnose, prescribe, recommend medications or dosages, or interpret medication interactions.
+- Explicit scope: Sleuth observes patterns in the user's logged data. It does NOT diagnose, prescribe, recommend medications or dosages, or interpret medication interactions.
 - Emergency redirect rule: if the user's message implies a medical emergency (suicidal ideation, chest pain with severity/urgency cues, stroke symptoms - face drooping, arm weakness, speech difficulty, allergic reaction with breathing difficulty), respond with a brief acknowledgment and direct them to emergency services (911 in US, 999 in UK, 000 in AU, or their local emergency number if the logs suggest location) - do not pattern-analyze the emergency.
 - Framing rule: always frame observations as "patterns in your data," "your logs show," or "based on X days of your entries." Never "you have" or "you are experiencing."
 - Unanswerable questions: if asked something the logs cannot answer (causation, prognosis, "why do I have X"), acknowledge the limit and redirect to pattern-level observations the data does support.
@@ -593,14 +594,14 @@ Full spec per CLAUDE.md Key Screens > State C. Key points:
   - Post-process AI response content: find severity words ("Mild", "Medium", "Severe", "Extreme") and wrap them with an inline SeverityGlyph + label pair. Regex-based substitution is fine for v1.
 - Empty state (messages.length === 0):
   - Fraunces 22px weight 400: "Your sleuth works for you."
-  - DM Sans 14px `--text-secondary`: `Ask about your patterns, triggers, or symptoms. Trail reads your ${loggedDaysCount} days of data - never your notes field unless you ask.`
+  - DM Sans 14px `--text-secondary`: `Ask about your patterns, triggers, or symptoms. Sleuth reads your ${loggedDaysCount} days of data - never your notes field unless you ask.`
   - Three starter chips below (tap-to-send), drawn from getSampleQuestionForWeek rotation offset by 0, 1, 2
-  - Footnote, DM Sans 11px `--text-secondary`: "Trail is not a doctor. For medical decisions, use the Doctor Report and see your clinician."
+  - Footnote, DM Sans 11px `--text-secondary`: "Sleuth is not a doctor. For medical decisions, use the Doctor Report and see your clinician."
 - Input area (bottom of card):
   - Above the textarea: horizontally scrolling row of 3 suggested prompt chips (double-bezel visual, tap-to-send - immediate send on tap, no textarea fill-and-commit step)
   - Textarea: auto-grow up to 4 lines max, placeholder cycles through sample questions on each mount
   - Trailing send button inside the textarea bezel: button-in-button style, bg-[--accent], Phosphor ArrowUp 14px weight light
-- Rate limit state: if rateLimitResetAt is set, replace the input area with a centered DM Sans 14px `--text-secondary` message: `You've asked 20 questions in the last day. Trail resets in ${formatDuration(rateLimitResetAt - now)}.` No upgrade CTA.
+- Rate limit state: if rateLimitResetAt is set, replace the input area with a centered DM Sans 14px `--text-secondary` message: `You've asked 20 questions in the last day. Sleuth resets in ${formatDuration(rateLimitResetAt - now)}.` No upgrade CTA.
 
 Streaming UX: while isStreaming, show the assistant's in-progress message with the text accumulating plus a blinking caret (CSS-only, no JS). On error, display error text inline with a retry button.
 
@@ -613,8 +614,8 @@ Per CLAUDE.md State D spec:
 - Eyebrow pill (accent-light variant): "SLEUTH - UNLOCKED, READY WHEN YOU ARE"
 - Fraunces 22px weight 400: computePreviewInsight(logs, conditions) - client-side, no API call
 - Below: a three-line "answer preview" of realistic correlation response copy (~40 words total). First line fully visible, next two blurred via `filter: blur(4px)`. Use realistic but generic placeholder copy describing pattern analysis - no user-specific data leakage beyond the insight sentence.
-- Primary CTA (sage green button-in-button trailing arrow): "Unlock Sleuth - $6.99/month" → router.push('/upgrade')
-- Secondary text below CTA (DM Sans 12px `--text-secondary`): "Your 14 days of data stay private. Trail only reads what you ask it to see."
+- Primary CTA (sage green button-in-button trailing arrow): "Unlock Sleuth" → router.push('/upgrade')
+- Secondary text below CTA (DM Sans 12px `--text-secondary`): "Your 14 days of data stay private. Sleuth only reads what you ask it to see."
 
 --- STEP 11: app/(app)/insights/page.tsx ---
 
@@ -780,42 +781,44 @@ Upgrade Screen component (shown when non-premium users access locked features):
   - "See how your patterns compare to thousands of others"
   - "Doctor-ready reports"
   - "Track multiple conditions"
-- Two pricing options, vertically stacked:
-  - PRIMARY (visually dominant, full-width sage green button): "$6.99/month" in large Fraunces. Button text: "Start Monthly Plan". Below button: "Cancel anytime." in small secondary text.
-  - SECONDARY (full-width button with sage green outline/border, white fill): "$29.99/year" in Fraunces with a small "14-day free trial" badge (sage green background, white text, inline). Button text: "Start Annual Plan".
-- Small trust text below both buttons in secondary color: "Your data never leaves your device. Payment secured by Stripe."
-- NO lifetime tier. NO urgency tactics (countdown timers, "limited time", scarcity language). The product sells itself.
-- Each option triggers a different Stripe Checkout session (both subscription mode)
+- Three pricing options with clear visual hierarchy — annual is the no-brainer:
+  - PRIMARY (annual card, visually dominant): full-width sage-green filled card, "BEST VALUE" pill top-left. Price: "$39.99 / year" in Fraunces. Subtext: "That's just $3.33/month" in DM Mono. Trial callout: "14-day free trial included". Primary CTA button: "Start Free Trial" (filled white button inside the green card, high contrast).
+  - SECONDARY (monthly card, recessive): smaller visual weight, standard double-bezel card on the warm surface. Price: "$9.99 / month" in Fraunces. Trial callout: "7-day free trial". CTA: "Try Monthly" (outlined/ghost style).
+  - TERTIARY (lifetime option, below the fold): NOT a full card. Rendered as a subdued centered text link beneath both cards. Copy: "Prefer to pay once? $79.99 lifetime access →". No trial language.
+- Trust text below all options in secondary color: "Cancel anytime. Your data is always yours."
+- NO urgency tactics (countdown timers, "limited time", scarcity language). The product sells itself.
+- Each option triggers Stripe Checkout. Annual/monthly use `mode: 'subscription'` with `trial_period_days: 14` or `7`. Lifetime uses `mode: 'payment'` for the one-time $79.99 charge — no trial.
 
 Create app/api/create-checkout/route.ts:
 - NOTE: This route handles the upgrade flow for users whose trial has expired (not initial onboarding - that uses /api/create-setup-intent and /api/activate-trial).
-- Accepts a `plan` parameter: 'monthly' or 'annual' and `customerId` (from profile.stripeCustomerId)
-- Creates a Stripe Checkout session in subscription mode with the existing Customer - card already on file, no need to re-enter
-- Uses STRIPE_MONTHLY_PRICE_ID or STRIPE_ANNUAL_PRICE_ID
+- Accepts a `plan` parameter: 'annual' | 'monthly' | 'lifetime', plus `email?` and `customerId?` (from profile.stripeCustomerId if present)
+- For annual/monthly: creates a Stripe Checkout session in subscription mode with `trial_period_days: 14` (annual) or `7` (monthly). Uses STRIPE_ANNUAL_PRICE_ID or STRIPE_MONTHLY_PRICE_ID.
+- For lifetime: creates a Stripe Checkout session in payment mode for the one-time $79.99 charge. Uses STRIPE_LIFETIME_PRICE_ID. No trial.
 - Success URL: /payment-success?session_id={CHECKOUT_SESSION_ID}&plan={plan}
 - Cancel URL: /upgrade
-- Returns the checkout URL
+- Returns { url, sessionId }
 
 Create app/(app)/payment-success/page.tsx (client component):
-- On mount, verifies the session_id by calling the API
-- Reads the `plan` param to determine which type of premium to set
-- Sets premium.type, stores subscriptionId, sets expiresAt
-- Shows a confirmation then auto-redirects to Insights after 3 seconds
+- On mount, reads session_id from URL params and POSTs to /api/confirm-checkout to verify the session and extract plan + customer details.
+- For lifetime sessions: dispatches SET_LIFETIME { customerId, email } — sets premium.type = 'lifetime' with no expiresAt.
+- For annual/monthly sessions: dispatches SET_TRIAL_DATA { subscriptionId, customerId, email, trialEndsAt, plan }.
+- Shows a confirmation then auto-redirects to /log.
+
+Create app/api/confirm-checkout/route.ts:
+- Accepts { sessionId }. Retrieves the Stripe Checkout Session (with subscription + customer expanded) and returns normalized { plan, customerId, email, subscriptionId?, trialEndsAt?, expiresAt? } to the client.
 
 Create app/api/stripe-webhook/route.ts:
-- Handles: checkout.session.completed, customer.subscription.deleted, invoice.payment_failed, invoice.payment_succeeded, customer.subscription.trial_will_end (3 days before trial ends - used to log for analytics), customer.subscription.updated
-- On invoice.payment_succeeded: the subscription auto-charged on day 8 - update premium.type and expiresAt via the verify-subscription API call on next app open
-- On customer.subscription.deleted: premium access ends
-- Uses STRIPE_WEBHOOK_SECRET for signature verification on all events
+- Handles: checkout.session.completed, customer.subscription.deleted, invoice.payment_failed.
+- Uses STRIPE_WEBHOOK_SECRET for signature verification on all events.
+- Existing handlers are stubs — the client-side confirm-checkout flow is the authoritative state update path. Webhook grows once a server-side subscription ledger is added.
 
 Create app/api/create-portal/route.ts:
-- Creates a Stripe Customer Portal session using profile.stripeCustomerId
-- Used for both trial cancellation and post-trial subscription management
+- Creates a Stripe Customer Portal session using profile.stripeCustomerId.
+- Used for annual and monthly subscribers only — lifetime members have no renewal to manage.
 
-Add to the Settings screen (built in Prompt 9):
-- "Manage Subscription" link that opens Stripe Customer Portal
-- Show current plan: "Monthly Plan - $6.99/mo" or "Annual Plan - $29.99/yr"
-- Show renewal date from premium.expiresAt
+Add to the Account screen:
+- For annual/monthly subscribers: "Manage Subscription" link that opens Stripe Customer Portal. Show current plan: "Monthly plan" / "Annual plan" + renewal date from premium.expiresAt.
+- For lifetime members: show a "Lifetime Member ✦" badge in place of the plan row. No Manage link — there is no renewal.
 ```
 
 -----
@@ -973,8 +976,8 @@ The landing/marketing page at app/page.tsx should be a server component for SEO.
   - "Visual trends over time" - "See what your body's been telling you. Patterns your memory misses."
   - "Community patterns" - "See how your experience compares to thousands of others with the same condition."
   - "Doctor-ready reports" - "Hand your doctor a structured summary, not a blank stare."
-- "Get Started - Free for 7 Days" button - sage green, centered. Links to /log (triggers onboarding if first visit).
-- Below CTA: trust line in small secondary text: "Optional Google sign-in. End-to-end encrypted. No one can read your data but you. Plans from $6.99/month."
+- "Get Started - Free for 14 Days" button - sage green, centered. Links to /log (triggers onboarding if first visit). 14 days reflects the annual trial (the recommended plan); users who pick monthly during onboarding get 7 days.
+- Below CTA: trust line in small secondary text: "Optional Google sign-in. End-to-end encrypted. No one can read your data but you. Plans from $9.99/month or $39.99/year. Lifetime available for $79.99."
 - Layout: max-width 960px on desktop (wider than app’s 480px), generous vertical rhythm (80–120px between sections)
 - Add a staggered load-in animation on the value props: CSS animation-delay cascade (0ms, 100ms, 200ms, 300ms), opacity 0→1 + translateY(12px→0), 400ms ease-out. This is the ONE moment of motion on the marketing site.
 - This page is server-rendered - verify it appears in View Source
@@ -1097,14 +1100,15 @@ Each guide page should:
    - `ANTHROPIC_API_KEY` - your Claude API key
    - `STRIPE_SECRET_KEY` - Stripe secret key
    - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
-   - `STRIPE_MONTHLY_PRICE_ID` - create a $6.99/month recurring product/price in Stripe Dashboard
-   - `STRIPE_ANNUAL_PRICE_ID` - create a $29.99/year recurring product/price in Stripe Dashboard
+   - `STRIPE_ANNUAL_PRICE_ID` - create a $39.99/year recurring product/price in Stripe Dashboard (primary plan, 14-day trial)
+   - `STRIPE_MONTHLY_PRICE_ID` - create a $9.99/month recurring product/price in Stripe Dashboard (secondary plan, 7-day trial)
+   - `STRIPE_LIFETIME_PRICE_ID` - create a $79.99 one-time product/price in Stripe Dashboard (tertiary plan, no trial)
    - `STRIPE_WEBHOOK_SECRET` - from Stripe webhook setup
    - `NEXT_PUBLIC_SUPABASE_URL` - your Supabase project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - your Supabase anon key
    - `SYNC_SERVER_PEPPER` - generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` and never rotate it (rotating invalidates all wrapped keys)
 4. Deploy to Vercel
-5. Set up Stripe webhook pointing to symptomsleuth.com/api/stripe-webhook (events: checkout.session.completed, customer.subscription.deleted, invoice.payment_failed, invoice.payment_succeeded)
+5. Set up Stripe webhook pointing to symptomsleuth.com/api/stripe-webhook (events: checkout.session.completed, customer.subscription.deleted, invoice.payment_failed)
 6. Test the full flow: onboarding → community opt-in → 7 days of logging with context → trial expiry → paywall → payment → premium unlock → community insights → doctor report → backup → restore
 7. Connect symptomsleuth.com domain
 8. Submit sitemap to Google Search Console

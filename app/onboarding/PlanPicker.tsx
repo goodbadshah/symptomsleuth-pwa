@@ -4,8 +4,8 @@ import { useAppState } from "@/app/providers";
 import type { Symptom } from "@/app/providers";
 
 interface Props {
-  selectedPlan: "monthly" | "annual";
-  onSelectPlan: (plan: "monthly" | "annual") => void;
+  selectedPlan: "monthly" | "annual" | "lifetime";
+  onSelectPlan: (plan: "monthly" | "annual" | "lifetime") => void;
   onContinue: () => void;
   onBack: () => void;
   conditions: string[];
@@ -17,22 +17,35 @@ const PLANS = [
   {
     id: "annual" as const,
     label: "Annual",
-    price: "$29.99",
+    price: "$39.99",
     period: "/year",
-    star: true,
-    sub: "Just $2.50/month",
-    trial: "14-day free trial",
+    star: false,
+    sub: "Just $3.33/month",
+    badge: "14-day free trial",
+    badgeAccent: true,
     trialDays: 14,
   },
   {
     id: "monthly" as const,
     label: "Monthly",
-    price: "$6.99",
+    price: "$9.99",
     period: "/month",
     star: false,
     sub: "Billed monthly",
-    trial: "7-day free trial",
+    badge: "7-day free trial",
+    badgeAccent: false,
     trialDays: 7,
+  },
+  {
+    id: "lifetime" as const,
+    label: "Lifetime",
+    price: "$79.99",
+    period: "one-time",
+    star: true,
+    sub: "No renewal ever.",
+    badge: "Best value",
+    badgeAccent: true,
+    trialDays: 0,
   },
 ];
 
@@ -155,12 +168,12 @@ export default function PlanPicker({
                           textTransform: "uppercase",
                           letterSpacing: "0.12em",
                           borderRadius: "1.25rem",
-                          backgroundColor: plan.trialDays === 14 ? "rgba(45,106,79,0.08)" : "rgba(0,0,0,0.05)",
-                          color: plan.trialDays === 14 ? "var(--accent)" : "var(--text-secondary)",
-                          border: plan.trialDays === 14 ? "1px solid rgba(45,106,79,0.18)" : "1px solid rgba(0,0,0,0.07)",
+                          backgroundColor: plan.badgeAccent ? "rgba(45,106,79,0.08)" : "rgba(0,0,0,0.05)",
+                          color: plan.badgeAccent ? "var(--accent)" : "var(--text-secondary)",
+                          border: plan.badgeAccent ? "1px solid rgba(45,106,79,0.18)" : "1px solid rgba(0,0,0,0.07)",
                         }}
                       >
-                        {plan.trial}
+                        {plan.badge}
                       </span>
                     </div>
                     <p
@@ -173,14 +186,14 @@ export default function PlanPicker({
                       {plan.sub}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end">
                     <span
                       className="text-2xl"
                       style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", fontWeight: 400 }}
                     >
                       {plan.price}
                     </span>
-                    <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                    <span className="text-xs" style={{ color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
                       {plan.period}
                     </span>
                   </div>
@@ -227,8 +240,9 @@ export default function PlanPicker({
           className="text-xs text-center mt-4"
           style={{ color: "var(--text-secondary)" }}
         >
-          No charge today. You&apos;ll only be billed after your{" "}
-          {PLANS.find((p) => p.id === selectedPlan)?.trialDays}-day free trial. Cancel anytime.
+          {selectedPlan === "lifetime"
+            ? "One-time payment. No subscription, no renewal."
+            : <>No charge today. You&apos;ll only be billed after your{" "}{PLANS.find((p) => p.id === selectedPlan)?.trialDays}-day free trial. Cancel anytime.</>}
         </p>
       </div>
     </div>

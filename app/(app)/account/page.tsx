@@ -99,8 +99,11 @@ export default function AccountPage() {
       : "Signed in with Google"
     : "Local account - data on this device only";
 
+  const isLifetime = profile.premium.type === "lifetime";
+
   // Plan badge
   function getPlanLabel() {
+    if (isLifetime) return "Lifetime Member ✦";
     if (!isPremium) return "Free";
     if (isInTrial) return "Trial";
     if (profile.premium.type === "monthly") return "Monthly";
@@ -194,9 +197,9 @@ export default function AccountPage() {
                   fontWeight: 500,
                 }}
               >
-                {getPlanLabel()} plan
+                {isLifetime ? getPlanLabel() : `${getPlanLabel()} plan`}
               </p>
-              {getEndDateLabel() && (
+              {isLifetime ? (
                 <p
                   style={{
                     fontFamily: "var(--font-mono)",
@@ -205,12 +208,25 @@ export default function AccountPage() {
                     margin: 0,
                   }}
                 >
-                  {isInTrial ? "Trial ends" : "Renews"} {getEndDateLabel()}
+                  One-time purchase · never expires
                 </p>
+              ) : (
+                getEndDateLabel() && (
+                  <p
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "11px",
+                      color: "var(--text-secondary)",
+                      margin: 0,
+                    }}
+                  >
+                    {isInTrial ? "Trial ends" : "Renews"} {getEndDateLabel()}
+                  </p>
+                )
               )}
             </div>
-            {/* Manage plan - only show if they have a stripe customer ID */}
-            {profile.stripeCustomerId && (
+            {/* Manage plan - only show for active subscription plans (not lifetime) */}
+            {!isLifetime && profile.stripeCustomerId && (
               <button
                 onClick={async () => {
                   try {

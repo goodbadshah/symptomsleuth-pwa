@@ -127,7 +127,7 @@ export default function AILockedPreview({ logs, conditions }: Props) {
               color: "var(--accent-foreground)",
             }}
           >
-            Unlock Sleuth - $6.99/month
+            Unlock Sleuth
           </span>
           <span
             className="group-hover:translate-x-0.5 group-hover:-translate-y-px"
@@ -167,7 +167,7 @@ export default function AILockedPreview({ logs, conditions }: Props) {
             lineHeight: 1.5,
           }}
         >
-          Your 14 days of data stay private. Trail only reads what you ask it to
+          Your 14 days of data stay private. Sleuth only reads what you ask it to
           see.
         </p>
     </div>

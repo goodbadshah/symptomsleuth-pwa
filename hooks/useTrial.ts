@@ -18,11 +18,15 @@ export function useTrial(): TrialStatus {
   const { profile } = state;
   const now = Date.now();
 
-  // Paid subscription active
+  // Lifetime never expires
+  const isLifetime = profile.premium.type === "lifetime";
+
+  // Paid subscription active (monthly/annual with a valid expiresAt)
   const hasPaidPlan =
-    profile.premium.type !== "none" &&
-    profile.premium.expiresAt != null &&
-    new Date(profile.premium.expiresAt).getTime() > now;
+    isLifetime ||
+    ((profile.premium.type === "monthly" || profile.premium.type === "annual") &&
+      profile.premium.expiresAt != null &&
+      new Date(profile.premium.expiresAt).getTime() > now);
 
   // Trial window: prefer server-set trialEndsAt, fall back to createdAt + 7d
   const trialEnd = profile.trialEndsAt
@@ -33,11 +37,13 @@ export function useTrial(): TrialStatus {
   const isPremium = hasPaidPlan || isInTrial;
   const isExpired = !isPremium;
 
-  const endsAt = hasPaidPlan
-    ? profile.premium.expiresAt ?? null
-    : profile.trialEndsAt ?? new Date(profile.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000
-      ? new Date(new Date(profile.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      : null;
+  const endsAt = isLifetime
+    ? null
+    : hasPaidPlan
+      ? profile.premium.expiresAt ?? null
+      : profile.trialEndsAt ?? new Date(profile.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000
+        ? new Date(new Date(profile.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        : null;
 
   return { isPremium, isInTrial, isExpired, endsAt };
 }

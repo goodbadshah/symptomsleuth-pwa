@@ -293,7 +293,7 @@ function UpgradeLocked() {
           marginTop: 12,
         }}
       >
-        $6.99/month or $29.99/year. Cancel anytime.
+        $9.99/month or $39.99/year. Cancel anytime.
       </p>
     </div>
   );

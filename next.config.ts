@@ -21,6 +21,11 @@ export default withPWA({
   },
   workboxOptions: {
     disableDevLogs: true,
+    // Force the new SW to activate immediately on rebuild instead of waiting
+    // for all tabs to close. Without this, the old SW keeps serving stale JS
+    // chunks after every build until the user manually unregisters it.
+    skipWaiting: true,
+    clientsClaim: true,
     runtimeCaching: [
       // Google Fonts stylesheet - cache-first, 1 year
       {
