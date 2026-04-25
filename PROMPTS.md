@@ -731,6 +731,227 @@ Implementation: client-side redirect in (app)/layout.tsx useEffect, fires once p
 
 -----
 
+## PROMPT 5.75 User Auth
+
+```
+
+Read CLAUDE.md before making any changes. This prompt restructures 
+the entire auth and onboarding flow.
+
+---
+
+## OVERVIEW
+
+New users complete onboarding and commit to a plan BEFORE creating 
+an account. Returning users sign in from Screen 0. Account creation 
+is the final step after payment — framed as securing what they've 
+built, not a gate at the entrance. Apple Sign-In is excluded for 
+now (PWA/web only; will be added at App Store submission).
+
+Community data opt-in is removed from onboarding entirely. 
+`community_opt_in` defaults to TRUE in AppState and profiles. 
+A toggle is surfaced in Settings under "Privacy" labelled: 
+"Contribute anonymous symptom trends to help others with similar 
+conditions." No mention of it anywhere in onboarding or account 
+setup.
+
+---
+
+## SCREEN 0 — ENTRY SCREEN
+
+Keep the existing headline, subheading, and "Start Free Trial" 
+primary CTA exactly as they are. Append below them:
+
+- Thin horizontal rule (1px, --border color token)
+- Label in DM Sans small/secondary weight: "Already a member?"
+- Two stacked outlined buttons (secondary visual weight):
+  - "Continue with Google" — inline Google G SVG
+  - "Continue with Email" — inline envelope SVG
+
+No other changes to Screen 0.
+
+**Sign-in logic:**
+- Triggers Supabase OAuth (Google) or magic link (Email)
+- On successful sign-in, check Supabase for existing profile:
+  - Profile found → skip onboarding, navigate to /log
+  - No profile found → navigate to /paywall with a banner: 
+    "No account found. Start your free trial below."
+
+---
+
+## ONBOARDING FLOW (Screens 1–3, new users only)
+
+All data stored in localStorage only during onboarding. 
+No Supabase writes yet. No auth prompts.
+
+Screen 1 — Condition Select: no changes to existing spec
+Screen 2 — Symptom Setup: no changes to existing spec
+
+Screen 3 — Trial Confirmation:
+- Keep existing heading and content
+- Change CTA from "Start Logging" to "Choose Your Plan →"
+- Routes to /paywall
+
+---
+
+## PAYWALL SCREEN
+
+Position: after onboarding, before account creation.
+Keep existing pricing layout and visual hierarchy exactly as-is.
+Update only the post-conversion behavior:
+
+**PWA / Stripe path:**
+1. User selects plan → Stripe Checkout opens
+2. Stripe collects email and payment
+3. On checkout.session.completed webhook:
+   - Create provisional Supabase profile keyed to Stripe 
+     customer email
+   - Set premium_type and premium_expires_at accordingly
+   - Set awaiting_account_setup: true
+4. Stripe success_url redirects to /welcome
+5. Recovery email: if user abandons before completing /welcome,
+   trigger a Supabase magic link email via the Stripe webhook:
+   "Finish setting up your account →" linking to /welcome
+
+---
+
+## ACCOUNT SETUP SCREEN (/welcome)
+
+Shown immediately after successful payment. Not skippable.
+
+Layout:
+- Heading (Fraunces): "One last thing — secure your data."
+- Subheading (DM Sans): "Create your account so your symptom 
+  history syncs across devices and is never lost."
+- Two stacked outlined buttons:
+  - "Continue with Google"
+  - "Set up with Email" → email input with magic link 
+    (pre-filled with Stripe email if available)
+- Trust line (DM Sans small, secondary color): 
+  "Your logs are encrypted. We cannot read them."
+- No skip option.
+
+On account creation:
+1. Supabase creates auth user
+2. Call migrateLocalData(userId) — see spec below
+3. Set supabase_linked: true, awaiting_account_setup: false
+4. Navigate to /log
+5. One-time toast: "Your data is saved and synced. Welcome."
+
+---
+
+## MIGRATION FUNCTION migrateLocalData(userId)
+
+This function is critical. A failed migration loses the user's 
+onboarding work. Build it to be bulletproof.
+
+- Read full AppState from localStorage
+- Write to Supabase in this order:
+  1. Upsert profiles row (conditions, symptoms, trial_ends_at, 
+     premium_type, community_opt_in: true)
+  2. Insert all daily_logs entries (if any exist from trial period)
+- Use a try/catch around each write
+- On any failure:
+  - Do NOT clear localStorage
+  - Surface an error state on /welcome: "We couldn't save your 
+    data. Please try again." with a retry button
+- On full success:
+  - Clear localStorage
+  - Set profile.userId to Supabase auth.uid()
+  - Proceed to /log
+
+---
+
+## APP STATE — update data model
+
+Bump schema version to 5. Update the profile shape:
+
+interface AppState {
+  version: 5;
+  profile: {
+    userId?: string;
+    email?: string;
+    supabaseLinked: boolean;
+    awaitingAccountSetup: boolean;
+    stripeCustomerId?: string;
+    conditions: string[];
+    symptoms: Symptom[];
+    createdAt: string;
+    trialEndsAt?: string;
+    premium: PremiumStatus;
+    communityOptIn: boolean;   // defaults to true, never shown 
+                                // in onboarding
+    aiUnlockedAt?: string;
+    aiUsage?: AIUsage;
+  };
+  logs: DailyLog[];
+}
+
+---
+
+## ROUTING LOGIC
+
+Enforce in root layout or middleware:
+
+No session + no localStorage profile    → / (Screen 0)
+No session + localStorage profile       → / (Screen 0, 
+                                           sign-in available)
+Active Supabase session                 → /log
+awaiting_account_setup: true            → /welcome (intercept)
+Onboarding complete, no payment         → /paywall
+
+---
+
+## SETTINGS SCREEN — Privacy section
+
+Add a "Privacy" section to the existing settings screen:
+
+- Toggle: "Contribute anonymous symptom trends"
+- Subtext: "Help others with similar conditions by sharing 
+  anonymous severity data. Never includes notes or 
+  identifying information."
+- Toggle reads/writes communityOptIn in both localStorage 
+  (if pre-auth) and Supabase profiles (if authenticated)
+- Default: ON
+
+---
+
+## SUPABASE CLIENT SETUP
+
+Install @supabase/supabase-js. Create lib/supabase.ts:
+
+import { createClient } from '@supabase/supabase-js'
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+For server-side routes and webhooks that need elevated access, 
+create lib/supabaseAdmin.ts using SUPABASE_SERVICE_ROLE_KEY 
+(never import this in any client component).
+
+---
+
+## AFTER ALL CHANGES:
+
+1. Update CLAUDE.md to reflect new auth/onboarding architecture
+2. Confirm "Continue without account" is removed everywhere
+3. Confirm communityOptIn appears nowhere in onboarding — 
+   only in Settings
+4. Confirm migrateLocalData has failure handling and does not 
+   clear localStorage on error
+5. Test new user flow: Screen 0 → onboarding → paywall → 
+   /welcome → /log
+6. Test returning user flow: Screen 0 → sign in → 
+   profile found → /log
+7. Test no-account edge case: Screen 0 → sign in → 
+   no profile → /paywall with banner
+```
+
+-----
+   
+
 ## PROMPT 6: Doctor Report Generation
 
 ```

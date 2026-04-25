@@ -1,49 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAppState } from "@/app/providers";
 
 type Plan = "annual" | "monthly" | "lifetime";
 
-export default function UpgradePage() {
+function UpgradeContent() {
   const router = useRouter();
-  const { state } = useAppState();
+  const params = useSearchParams();
+  const { state, dispatch } = useAppState();
   const [submitting, setSubmitting] = useState<Plan | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const errorMsg: string | null = null;
+  const missingAccount = params.get("missing") === "1";
 
-  async function handleSelect(plan: Plan) {
+  function handleSelect(plan: Plan) {
     if (submitting) return;
     setSubmitting(plan);
-    setErrorMsg(null);
-
-    try {
-      const res = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan,
-          email: state.profile.email,
-          customerId: state.profile.stripeCustomerId,
-        }),
-      });
-
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Unable to start checkout.");
-      }
-
-      const { url } = (await res.json()) as { url: string };
-      window.location.href = url;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong.";
-      setErrorMsg(msg);
-      setSubmitting(null);
+    // Starting a new plan resets any stale post-payment flag from a prior
+    // incomplete run. The flag gets flipped back on after this payment succeeds.
+    if (state.profile.awaitingAccountSetup) {
+      dispatch({ type: "SET_AWAITING_ACCOUNT_SETUP", payload: false });
     }
+    router.push(`/welcome?plan=${plan}`);
   }
 
   return (
     <div style={{ padding: "32px 20px 48px" }}>
+      {missingAccount && (
+        <div
+          role="status"
+          style={{
+            marginBottom: 20,
+            padding: "12px 14px",
+            borderRadius: "0.875rem",
+            backgroundColor: "var(--accent-light)",
+            color: "var(--accent)",
+            fontFamily: "var(--font-body)",
+            fontSize: "13px",
+            lineHeight: 1.5,
+          }}
+        >
+          No account found. Start your free trial below.
+        </div>
+      )}
       {/* Back */}
       <button
         onClick={() => router.back()}
@@ -557,5 +557,13 @@ function LifetimeCard({
         </button>
       </div>
     </div>
+  );
+}
+
+export default function UpgradePage() {
+  return (
+    <Suspense>
+      <UpgradeContent />
+    </Suspense>
   );
 }

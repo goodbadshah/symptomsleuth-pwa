@@ -85,12 +85,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const activeTabIndex = Math.max(0, tabs.findIndex((t) => pathname.includes(t.match)));
   const mainRef = useRef<HTMLElement>(null);
 
-  // Redirect to onboarding if no conditions selected
+  // Redirect to onboarding if no conditions selected.
+  // Redirect to /welcome if payment is done but account setup is still pending.
+  // Exclude /upgrade: the plan picker must remain reachable so a user who
+  // abandoned mid-flow can start a new plan. /welcome will itself reset the
+  // pending flag once a fresh intent is started.
   useEffect(() => {
     if (state.profile.conditions.length === 0) {
       router.replace("/onboarding");
+      return;
     }
-  }, [state.profile.conditions, router]);
+    if (state.profile.awaitingAccountSetup && !pathname.startsWith("/upgrade")) {
+      router.replace("/welcome");
+    }
+  }, [state.profile.conditions, state.profile.awaitingAccountSetup, pathname, router]);
 
   // Default landing tab - redirect to /insights when loggedDaysCount >= 4
   // Only fires once per session on cold open to /log, respects user navigation.

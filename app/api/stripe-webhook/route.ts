@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-03-25.dahlia",
@@ -27,25 +28,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
+  // Inline card collection means activation is driven by the client calling
+  // /api/activate-plan after a successful confirm. This webhook no longer
+  // provisions profiles; it only handles post-activation subscription state.
   switch (event.type) {
-    case "checkout.session.completed": {
-      // Fires once for every successful checkout. For `mode: 'subscription'`
-      // (monthly/annual) the customer enters the trial window; for
-      // `mode: 'payment'` (lifetime) the one-time charge has succeeded.
-      // Client-side state is updated via the /payment-success redirect;
-      // this handler exists for audit trail and future server-side persistence.
-      break;
-    }
-
     case "customer.subscription.deleted": {
-      // Subscription cancelled or ended. Mark premium as expired in any
-      // server-side record of the user if/when that layer exists.
+      const sub = event.data.object as Stripe.Subscription;
+      if (supabaseAdmin) {
+        await supabaseAdmin
+          .from("profiles")
+          .update({
+            premium_type: "none",
+            premium_expires_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", sub.id);
+      }
       break;
     }
 
     case "invoice.payment_failed": {
-      // Renewal charge failed. Stripe will retry per dunning config; this is
-      // the hook for surfacing retention messaging in-app.
+      // Stripe dunning will retry; in-app retention messaging reads current
+      // subscription state directly from the profile.
       break;
     }
 

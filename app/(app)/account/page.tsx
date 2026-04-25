@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppState } from "@/app/providers";
 import { useTrial } from "@/hooks/useTrial";
 import { generateDemoData, DEMO_CONDITIONS } from "@/utils/generateDemoData";
+import { supabase } from "@/lib/supabase";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Eyebrow tag helper
@@ -135,6 +136,14 @@ export default function AccountPage() {
 
   function handleCommunityToggle(value: boolean) {
     dispatch({ type: "SET_COMMUNITY_OPT_IN", payload: value });
+    // Persist to Supabase if the user is linked. Fire-and-forget - the local
+    // dispatch is the source of truth for this session.
+    if (profile.supabaseLinked && profile.userId && supabase) {
+      void supabase
+        .from("profiles")
+        .update({ community_opt_in: value })
+        .eq("user_id", profile.userId);
+    }
   }
 
   function handleThemeChange(value: "light" | "dark" | "system") {
@@ -257,14 +266,15 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* ── Settings section ── */}
+        {/* ── Privacy section ── */}
         <div style={{ padding: "20px 0", borderBottom: "1px solid var(--border)" }}>
-          <EyebrowTag label="Settings" />
+          <EyebrowTag label="Privacy" />
           <div
             style={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-start",
               justifyContent: "space-between",
+              gap: 16,
               marginTop: 12,
             }}
           >
@@ -278,7 +288,7 @@ export default function AccountPage() {
                   fontWeight: 500,
                 }}
               >
-                Share anonymous data
+                Contribute anonymous symptom trends
               </p>
               <p
                 style={{
@@ -286,17 +296,18 @@ export default function AccountPage() {
                   fontSize: "13px",
                   color: "var(--text-secondary)",
                   margin: 0,
-                  maxWidth: 220,
-                  lineHeight: 1.4,
+                  maxWidth: 260,
+                  lineHeight: 1.45,
                 }}
               >
-                Help build community insights. No names, no specific dates.
+                Help others with similar conditions by sharing anonymous
+                severity data. Never includes notes or identifying information.
               </p>
             </div>
             <ToggleSwitch
               checked={profile.communityOptIn}
               onChange={handleCommunityToggle}
-              label="Share anonymous data for community insights"
+              label="Contribute anonymous symptom trends"
             />
           </div>
         </div>

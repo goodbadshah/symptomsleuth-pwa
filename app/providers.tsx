@@ -51,20 +51,22 @@ export interface DailyLog {
 }
 
 export interface AppState {
-  version: 4;
+  version: 5;
   profile: {
-    userId?: string;          // local UUID until Supabase auth; Supabase auth.uid after
-    email?: string;           // collected at card screen - billing + recovery
+    userId?: string;                // local UUID until Supabase auth; Supabase auth.uid after account setup
+    email?: string;                 // collected at Stripe Checkout - billing + recovery
+    supabaseLinked: boolean;        // true once /welcome account setup migrates data to Supabase
+    awaitingAccountSetup: boolean;  // true after successful payment, until user completes /welcome
     stripeCustomerId?: string;
     conditions: string[];
     symptoms: Symptom[];
     createdAt: string;
-    trialEndsAt?: string;     // set by server after card collection
+    trialEndsAt?: string;
     premium: PremiumStatus;
-    communityOptIn: boolean;
-    aiUnlockedAt?: string;    // ISO date - first moment loggedDays>=14 AND totalLogs>=20
-    aiUsage?: AIUsage;        // rolling-24h message counter for client-side rate limiting
-    theme?: 'light' | 'dark' | 'system'; // UI color scheme preference
+    communityOptIn: boolean;        // defaults to true; toggle lives in Settings → Privacy, not onboarding
+    aiUnlockedAt?: string;
+    aiUsage?: AIUsage;
+    theme?: 'light' | 'dark' | 'system';
   };
   logs: DailyLog[];
 }
@@ -72,13 +74,15 @@ export interface AppState {
 // ─── Initial state ─────────────────────────────────────────────────────────────
 
 const initialState: AppState = {
-  version: 4,
+  version: 5,
   profile: {
     conditions: [],
     symptoms: [],
     createdAt: new Date().toISOString(),
     premium: { type: "none" },
     communityOptIn: true,
+    supabaseLinked: false,
+    awaitingAccountSetup: false,
   },
   logs: [],
 };
@@ -88,6 +92,8 @@ const initialState: AppState = {
 export type AppAction =
   | { type: "HYDRATE"; payload: AppState }
   | { type: "SET_USER_ID"; payload: string }
+  | { type: "SET_SUPABASE_LINKED"; payload: boolean }
+  | { type: "SET_AWAITING_ACCOUNT_SETUP"; payload: boolean }
   | { type: "SET_TRIAL_DATA"; payload: { subscriptionId: string; customerId: string; email: string; trialEndsAt: string; plan: "monthly" | "annual" } }
   | { type: "SET_LIFETIME"; payload: { customerId: string; email: string } }
   | { type: "SET_CONDITIONS"; payload: string[] }
@@ -114,6 +120,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         profile: { ...state.profile, userId: action.payload },
       };
 
+    case "SET_SUPABASE_LINKED":
+      return {
+        ...state,
+        profile: { ...state.profile, supabaseLinked: action.payload },
+      };
+
+    case "SET_AWAITING_ACCOUNT_SETUP":
+      return {
+        ...state,
+        profile: { ...state.profile, awaitingAccountSetup: action.payload },
+      };
+
     case "SET_TRIAL_DATA": {
       const { subscriptionId, customerId, email, trialEndsAt, plan } = action.payload;
       return {
@@ -123,6 +141,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
           email,
           stripeCustomerId: customerId,
           trialEndsAt,
+          awaitingAccountSetup: true,
           premium: {
             type: plan,
             stripeSubscriptionId: subscriptionId,
@@ -140,6 +159,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
           ...state.profile,
           email,
           stripeCustomerId: customerId,
+          awaitingAccountSetup: true,
           premium: { type: "lifetime" },
         },
       };

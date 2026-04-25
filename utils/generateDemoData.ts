@@ -116,11 +116,13 @@ export function generateDemoData(condition: string): AppState {
   createdAt.setDate(createdAt.getDate() - 89);
 
   return {
-    version: 4,
+    version: 5,
     profile: {
       conditions: [condition],
       symptoms,
       createdAt: createdAt.toISOString(),
+      supabaseLinked: false,
+      awaitingAccountSetup: false,
       premium: {
         type: "monthly",
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),

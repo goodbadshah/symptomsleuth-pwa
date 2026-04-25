@@ -1,7 +1,7 @@
 import type { AppState } from "@/app/providers";
 
 const STORAGE_KEY = "symptomsleuth_v2";
-const CURRENT_VERSION = 4;
+const CURRENT_VERSION = 5;
 
 // ─── Migration ────────────────────────────────────────────────────────────────
 
@@ -48,12 +48,35 @@ function migrate(raw: Record<string, unknown>): AppState {
   if (version < 4) {
     // v3 → v4: add AI fields (non-destructive - preserves all existing data)
     const profile = (raw.profile as Record<string, unknown>) ?? {};
-    return {
+    return migrate({
       version: 4,
       profile: {
         ...profile,
         aiUnlockedAt: (profile.aiUnlockedAt as string | undefined) ?? undefined,
         aiUsage: (profile.aiUsage as AppState["profile"]["aiUsage"]) ?? undefined,
+      },
+      logs: (raw.logs as AppState["logs"]) ?? [],
+    } as Record<string, unknown>);
+  }
+
+  if (version < 5) {
+    // v4 → v5: add supabaseLinked + awaitingAccountSetup flags for the Stripe-first
+    // onboarding. Existing users with a stripeCustomerId are treated as already
+    // through the account-setup gate (they installed before /welcome existed).
+    const profile = (raw.profile as Record<string, unknown>) ?? {};
+    const hasStripe = typeof profile.stripeCustomerId === "string" && profile.stripeCustomerId.length > 0;
+    return {
+      version: 5,
+      profile: {
+        ...profile,
+        supabaseLinked:
+          typeof profile.supabaseLinked === "boolean" ? profile.supabaseLinked : false,
+        awaitingAccountSetup:
+          typeof profile.awaitingAccountSetup === "boolean"
+            ? profile.awaitingAccountSetup
+            : hasStripe
+              ? false
+              : false,
       },
       logs: (raw.logs as AppState["logs"]) ?? [],
     } as AppState;

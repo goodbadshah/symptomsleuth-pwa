@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useInView, entryStyle } from "@/hooks/useInView";
 import AppHeader from "@/components/layout/AppHeader";
+import ReturningMemberSignIn from "@/components/auth/ReturningMemberSignIn";
 
 const VALUE_PROPS = [
   {
@@ -91,6 +92,9 @@ export default function LandingPage() {
         >
           Optional sign-in. End-to-end encrypted. Only you can read your data.
         </p>
+
+        {/* Returning-member sign-in - appended below the primary CTA */}
+        <ReturningMemberSignIn />
       </section>
 
       {/* ── Value props - scroll entry ── */}

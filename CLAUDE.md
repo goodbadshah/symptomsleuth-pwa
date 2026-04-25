@@ -11,7 +11,7 @@ SymptomSleuth is a PWA that helps people with chronic conditions (migraine, IBS,
 - **Charts:** Recharts for symptom timeline visualization
 - **AI:** Anthropic Claude API (claude-sonnet-4-5-20250929) for doctor report generation, AI Sleuth chat, and pattern narrative
 - **Payments:** Stripe Checkout Sessions (subscription mode for annual/monthly; payment mode for lifetime)
-- **Auth:** Supabase Auth - Google OAuth, Facebook OAuth, and anonymous (UUID) fallback. No email required. `auth.uid` is the permanent user identifier used for Stripe and cloud sync.
+- **Auth:** Supabase Auth - Google OAuth and email magic link. Account creation runs at `/welcome` after the user completes Stripe Checkout, not at the start of onboarding. Returning members sign in from the landing page. Anonymous/UUID-only mode is retired - every user either authenticates at `/welcome` or is pre-auth with local-only data during the onboarding/trial window. Apple Sign-In is deferred until App Store submission.
 - **Backend:** Supabase (anonymous community data aggregation, pattern computation, encrypted profile sync)
 - **Hosting:** Vercel
 - **PWA:** next-pwa (or @ducanh2912/next-pwa) with Workbox for service worker, offline support, and install prompt
@@ -288,7 +288,7 @@ Inner core:  border-radius 0.875rem  (= 1.25rem − 0.375rem, concentric-smaller
 | `--bezel-ring` | `rgba(0,0,0,0.06)` | `var(--border)` |
 | `--bezel-inset-shadow` | `inset 0 1px 1px rgba(255,255,255,0.9)` | `none` |
 
-**Never hardcode** `rgba(255,255,255,0.6)`, `rgba(0,0,0,0.06)`, or `inset 0 1px 1px rgba(255,255,255,0.9)` in component files. All three onboarding screens (ConditionSelect, CommunityOptIn, PlanPicker, CardCollection) and all app components use the tokens above.
+**Never hardcode** `rgba(255,255,255,0.6)`, `rgba(0,0,0,0.06)`, or `inset 0 1px 1px rgba(255,255,255,0.9)` in component files. Onboarding screens (ConditionSelect, SymptomSetup, TrialConfirmation) and all app components use the tokens above.
 
 - **Symptom rows:** outer shell wraps each row group, inner core holds the name + slider
 - **Condition cards (onboarding):** outer shell with green tint when selected (`ring-[--accent]/20 bg-[--accent-light]/30`)
@@ -427,18 +427,20 @@ Before marking any component done, verify:
 
 ```typescript
 interface AppState {
-  version: 4;                       // schema version for migrations (bumped for AI fields)
+  version: 5;                       // schema version for migrations (bumped for auth-flow restructure)
   profile: {
-    userId?: string;                // local UUID until magic link clicked; Supabase auth.uid after
-    email?: string;                 // collected at card screen - billing + recovery email
+    userId?: string;                // local UUID pre-account; Supabase auth.uid after /welcome migration
+    email?: string;                 // collected at Stripe Checkout - billing + recovery email
+    supabaseLinked: boolean;        // true once /welcome successfully migrated data into Supabase
+    awaitingAccountSetup: boolean;  // true after payment, until /welcome completes account setup
     stripeCustomerId?: string;      // Stripe Customer ID
     conditions: string[];           // e.g., ["Migraine", "IBS"]
     symptoms: Symptom[];            // per-condition symptom list
-    createdAt: string;              // ISO date - trial start
-    trialEndsAt?: string;           // ISO date - createdAt + 7 days, set by server
+    createdAt: string;              // ISO date - onboarding start
+    trialEndsAt?: string;           // ISO date - createdAt + 7 or 14 days, set by Stripe
     premium: PremiumStatus;
-    communityOptIn: boolean;
-    aiUnlockedAt?: string;          // ISO date - first moment loggedDays >= 14 AND totalLogs >= 20. Used for analytics + sample-question pacing.
+    communityOptIn: boolean;        // defaults to true. Toggle lives in Settings → Privacy only.
+    aiUnlockedAt?: string;          // ISO date - first moment loggedDays >= 14 AND totalLogs >= 20
     aiUsage?: AIUsage;              // rolling-24h message counter, client-side rate-limit state
   };
   logs: DailyLog[];
@@ -708,19 +710,15 @@ The deep green band is load-bearing for brand recognition in UGC and TikTok cont
 
 ### Key Screens
 
-**1. Onboarding (5 screens, ~45 seconds)**
+**1. Onboarding (3 screens, ~30 seconds)**
 
-Screen 0 - Auth Choice (NEW - shown only on first install):
-- Heading in Fraunces: "Your data, your lock."
-- Subheading in DM Sans, secondary: "Sign in to sync across devices and recover your data if you switch phones. Everything is encrypted before it leaves your device."
-- Three options, vertically stacked:
-  1. "Continue with Google" - sage green button, Google logo inline SVG (simple G mark, no color)
-  2. "Continue with Facebook" - same style, Facebook logo inline SVG (simple f mark)
-  3. "Continue without account" - text-style link in secondary color, below the buttons with extra top margin
-- Small reassurance text below the buttons: "We store an encrypted backup of your data. We cannot read it - ever. Even if compelled."
-- Auth triggers `supabase.auth.signInWithOAuth({ provider: 'google' | 'facebook' })` which redirects and returns to `/auth/callback`, then continues onboarding.
-- Anonymous path: generates a UUID, stores as profile.userId. No cloud sync available.
-- This screen is skipped on all subsequent app loads once a userId exists.
+Onboarding is now plan-first, account-last. New users complete condition + symptom setup in localStorage only, then pick a plan and pay. Account creation happens at `/welcome` after successful payment. Community opt-in is removed from onboarding and now only lives in Settings → Privacy.
+
+Screen 0 - Landing (`app/page.tsx`):
+- Keep the existing hero, value-prop, privacy, and pricing sections.
+- Primary CTA stays "Start free trial" → `/onboarding`.
+- Below the hero CTA, appended after the reassurance line: a hairline rule, a "Already a member?" label, and two outlined buttons - "Continue with Google" (Supabase OAuth) and "Continue with Email" (magic link via `supabase.auth.signInWithOtp`).
+- Sign-in returns to `/auth/callback?mode=signin`, which looks up the profile: found → `/log`; not found → `/upgrade?missing=1` with a banner reading "No account found. Start your free trial below."
 
 Screen 1 - Condition Select:
 - Grid of tappable condition cards. Multi-select.
@@ -734,17 +732,38 @@ Screen 2 - Symptom Setup:
 - Each symptom row shows: symptom name + on/off toggle (whether to track it). No type selector - all symptoms are severity 1–5.
 - List-like, not card-per-symptom. Think settings screen.
 
-Screen 3 - Community Opt-In:
-- Heading in Fraunces: "Help others with [Condition]"
-- Clear explanation: what IS shared (condition, symptom name, severity by week, sleep/stress/exercise/food trigger context) and what is NEVER shared (identity, notes, specific dates, menstrual data).
-- Toggle: "Contribute anonymous data" - ON by default.
-- Warm, honest tone - not legalese.
+Screen 3 - Trial Confirmation (`TrialConfirmation.tsx`):
+- Heading: "You're ready." Subheading: "Pick a plan to start your free trial."
+- Short list of what the trial includes (symptom logging, community patterns, AI Sleuth unlock at 14 days, doctor report).
+- CTA: "Choose your plan" → persists conditions + symptoms to localStorage and navigates to `/upgrade`.
+- No card collection in onboarding. Payment happens inside Stripe Checkout.
 
-Screen 4 - Trial Start:
-- "You're ready. Your 7-day full access starts now."
-- Brief list of what's included.
-- "Start Logging" → saves profile, navigates to Log tab.
-- Quiet and confident - large Fraunces heading, generous whitespace.
+There is no community opt-in step in onboarding. `profile.communityOptIn` defaults to `true` in AppState and `profiles` rows. The toggle is surfaced only in Settings → Privacy on the Account tab.
+
+**Payment + Account Setup (`/welcome`)**
+
+Payment and account creation both live on `/welcome`, which sits outside the `(app)/` shell so there is no bottom nav. There is no redirect to Stripe-hosted Checkout; card collection is inline via Stripe Elements on SymptomSleuth's own page. The page has two sequential states driven by the client-side `profile.premium.type` value:
+
+*State 1 - Payment (before `profile.premium.type !== "none"`).* Requires `?plan=annual|monthly|lifetime` in the URL; missing plan redirects back to `/upgrade`.
+
+- Heading: "Add a card." Subheading varies by plan ("No charge today. Cancel anytime during your free trial." for sub, "One payment. Never expires." for lifetime).
+- Plan summary card (name + price + trial language).
+- Stripe `<PaymentElement>` inside a double-bezel container. Annual/Monthly use a SetupIntent (no charge, payment method saved for the trial-end charge); Lifetime uses a PaymentIntent that charges $79.99 immediately.
+- Single "Email" input above the card. CTA copy is plan-specific ("Start free trial" for sub, "Pay $79.99" for lifetime).
+- On submit the client calls `stripe.confirmSetup` or `stripe.confirmPayment` with `redirect: 'if_required'` (3DS is the only reason we leave the page), then posts the intent id to `/api/activate-plan` which creates the Stripe customer, attaches the payment method, and (for subscriptions) creates the subscription with `trial_period_days`. The server response is dispatched as `SET_TRIAL_DATA` or `SET_LIFETIME`, both of which set `awaitingAccountSetup: true`.
+
+*State 2 - Account auth (after payment succeeds, before `supabaseLinked`).*
+
+- Heading: "One last thing - secure your data." Subheading: "Create your account so your symptom history syncs across devices and is never lost."
+- Two stacked outlined buttons: "Continue with Google" and "Set up with Email" (magic link; the email field pre-fills from the billing email).
+- Trust line: "Your logs are encrypted. We cannot read them."
+- No skip option. The `(app)/layout.tsx` guard redirects back to `/welcome` from every app route while `awaitingAccountSetup` is true.
+
+On successful sign-in at `/welcome`:
+1. Supabase establishes the auth session.
+2. `migrateLocalData(userId, state)` (in `utils/migrateLocalData.ts`) upserts the `profiles` row, then inserts any `daily_logs` captured before migration. On any failure, localStorage is NOT cleared and the user sees a retry button. On success, `profile.userId` is set to `auth.uid()`, `supabaseLinked` flips to `true`, `awaitingAccountSetup` to `false`, and the user is routed to `/log`.
+
+**Abandonment recovery:** No webhook-driven provisional profile is needed because the Stripe confirm happens on-page. If the user closes the tab between payment and account-auth, `awaitingAccountSetup` is already persisted in localStorage - the next visit lands on `/welcome` via the `(app)/layout` guard and resumes at State 2. The Stripe webhook (`/api/stripe-webhook`) only handles post-activation subscription lifecycle (`customer.subscription.deleted`, `invoice.payment_failed`).
 
 **2. Daily Log (the core loop - 10 seconds)**
 
@@ -981,12 +1000,12 @@ Visual hierarchy — annual is the no-brainer choice:
 - **Lifetime link (tertiary):** rendered as a subdued centered text link below both cards, not a card. Copy: "Prefer to pay once? $79.99 lifetime access →". No trial language.
 - **Trust line beneath all options:** "Cancel anytime. Your data is always yours."
 
-Checkout flow:
-1. CTA → POST `/api/create-checkout` with `{ plan: 'annual' | 'monthly' | 'lifetime', email?, customerId? }`
-2. Server creates a Stripe Checkout Session (subscription mode for annual/monthly with `trial_period_days: 14` or `7`; payment mode for lifetime) and returns its URL
-3. Client redirects the browser to the Stripe-hosted checkout
-4. On success, Stripe redirects to `/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=...`
-5. The payment-success page retrieves the session via `/api/confirm-checkout`, dispatches `SET_TRIAL_DATA` (annual/monthly) or `SET_LIFETIME` (lifetime), then navigates to `/log`
+Checkout flow (inline - no redirect to Stripe-hosted Checkout):
+1. CTA → `router.push('/welcome?plan=annual|monthly|lifetime')`
+2. `/welcome` calls `POST /api/create-plan-intent` to create either a SetupIntent (annual/monthly) or a PaymentIntent (lifetime) and gets a `clientSecret`.
+3. Stripe `<PaymentElement>` renders inline with that client secret. Supports cards plus whatever payment methods Stripe enables via `automatic_payment_methods` (Apple Pay / Google Pay / Link when configured in the Stripe Dashboard).
+4. On submit the client calls `confirmSetup` or `confirmPayment` with `redirect: 'if_required'`, then `POST /api/activate-plan` with the intent id. The server creates the Stripe customer, attaches the payment method, and (for subscriptions) creates the subscription with `trial_period_days`.
+5. `SET_TRIAL_DATA` / `SET_LIFETIME` dispatch flips `awaitingAccountSetup: true`. The page transitions to State 2 for account setup (see `/welcome` spec).
 
 NO urgency tactics. NO countdown timers.
 
@@ -1014,8 +1033,9 @@ NO urgency tactics. NO countdown timers.
 - Annual (primary): $39.99/year, 14-day free trial — `STRIPE_ANNUAL_PRICE_ID`
 - Monthly (secondary): $9.99/month, 7-day free trial — `STRIPE_MONTHLY_PRICE_ID`
 - Lifetime (tertiary): $79.99 one-time, no trial — `STRIPE_LIFETIME_PRICE_ID`
-- Checkout route (`/api/create-checkout`) accepts `plan: 'annual' | 'monthly' | 'lifetime'` and creates the appropriate Stripe Checkout Session (subscription mode with trial for annual/monthly; payment mode for lifetime).
-- Webhook (`/api/stripe-webhook`) handles: `checkout.session.completed`, `customer.subscription.deleted`, `invoice.payment_failed`.
+- Card collection is inline via Stripe Elements on `/welcome` (no hosted Checkout). `POST /api/create-plan-intent` returns `{ clientSecret, intentType }` (SetupIntent for annual/monthly, PaymentIntent for lifetime).
+- `POST /api/activate-plan` takes `{ plan, intentId, email }`. For subscriptions it creates the customer, attaches the saved payment method, and creates the subscription with `trial_period_days`. For lifetime it verifies `payment_intent.status === 'succeeded'` and attaches the Customer.
+- Webhook (`/api/stripe-webhook`) handles only post-activation lifecycle: `customer.subscription.deleted`, `invoice.payment_failed`. It does not provision profiles.
 - Customer Portal link in Account settings — shown for annual and monthly subscribers only. Lifetime members have no renewal to manage, so the portal link is hidden and a "Lifetime Member ✦" badge renders instead.
 
 **Supabase (Community Data):**
@@ -1036,7 +1056,7 @@ NO urgency tactics. NO countdown timers.
 ```
 app/
   layout.tsx
-  page.tsx                    # landing (server-rendered)
+  page.tsx                    # landing (client) - hero + value props + returning-member sign-in
   sitemap.ts
   robots.ts
   [conditionSlug]/
@@ -1045,33 +1065,46 @@ app/
     page.tsx
     [guideSlug]/
       page.tsx
+  onboarding/
+    page.tsx                  # 3-step flow (condition → symptoms → trial confirmation)
+    ConditionSelect.tsx
+    SymptomSetup.tsx
+    TrialConfirmation.tsx     # Screen 3 - CTA "Choose your plan" routes to /upgrade
+  welcome/
+    page.tsx                  # Post-checkout account setup (Google / email magic link). Outside (app)/ so no bottom nav.
+  auth/
+    callback/route.ts         # OAuth + magic-link exchange; modes=signin|welcome control routing
   (app)/
-    layout.tsx                # app shell with bottom nav (use client)
+    layout.tsx                # app shell with bottom nav (use client); guards onto /onboarding or /welcome
     log/page.tsx
     timeline/page.tsx          # redirect('/insights') only - Timeline is a segment, not a standalone page
     insights/page.tsx
     report/page.tsx
     account/page.tsx
     settings/page.tsx
-    upgrade/page.tsx
-    payment-success/page.tsx
+    upgrade/page.tsx          # Paywall (annual / monthly / lifetime) - taps route to /welcome?plan=X
   api/
     generate-report/route.ts
     ai-chat/route.ts                  # Streaming SSE endpoint for AI Sleuth. Sonnet 4.5 with prompt caching.
-    create-checkout/route.ts
+    create-plan-intent/route.ts       # Returns { clientSecret, intentType } for inline Stripe Elements
+    activate-plan/route.ts            # Creates customer + subscription (sub) or verifies PaymentIntent (lifetime)
     create-portal/route.ts
-    stripe-webhook/route.ts
+    stripe-webhook/route.ts           # Post-activation subscription lifecycle only (no profile provisioning)
     community/
       submit/route.ts
       aggregates/route.ts
+lib/
+  supabase.ts                 # Browser-safe Supabase client (anon key). Use anywhere a client needs Supabase.
+  supabaseAdmin.ts            # Server-only client (service-role key). Never import in a client component.
 components/
   brand/
     Wordmark.tsx              # Thin wrapper around the existing /public/brand/wordmark.svg asset. Do NOT recreate the logo - it is authored and shipped as-is.
-  onboarding/
+  onboarding/                   # The onboarding UI lives in app/onboarding/, not components/. Listed here for cross-reference.
     ConditionSelect.tsx
     SymptomSetup.tsx
-    CommunityOptIn.tsx
-    TrialStart.tsx
+    TrialConfirmation.tsx
+  auth/
+    ReturningMemberSignIn.tsx   # Google + email-magic-link block appended to the landing page for existing members.
   log/
     DailyLog.tsx
     SeverityChipSelector.tsx  # THE canonical severity input - 5 chips, tap-to-commit. Used everywhere severity is captured (symptoms + context fields).
@@ -1139,6 +1172,7 @@ utils/
   logMessages.ts            # 40 post-save messages (15 encouraging, 15 tips, 10 insight). pickRandomMessage().
   aiSystemPrompt.ts         # System prompt for /api/ai-chat - medical safety scaffolding, pattern framing, emergency redirect rules
   aiPreviewStats.ts         # Client-side computation of data-derived teaser insights for State D. Zero API spend. Used by AILockedPreview.
+  migrateLocalData.ts       # One-shot migration from localStorage to Supabase after account setup at /welcome. Keeps localStorage on failure.
 public/
   manifest.json
   icons/
