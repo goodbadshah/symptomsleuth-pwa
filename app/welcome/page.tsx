@@ -567,10 +567,9 @@ function AccountAuth() {
     }
     setStatus("signing-in");
     setErrorMsg(null);
-    // Stash the post-callback intent in sessionStorage instead of as a URL
-    // query string. Supabase's redirect_to allowlist matcher rejects URLs
-    // that carry query strings, which silently bounces users to Site URL.
-    sessionStorage.setItem("auth_mode", "welcome");
+    // No query string on the redirect: Supabase's allowlist matcher silently
+    // rejects URLs with queries and falls back to Site URL. The callback page
+    // figures out where to route via Supabase profile + localStorage.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -598,7 +597,6 @@ function AccountAuth() {
     }
     setStatus("signing-in");
     setErrorMsg(null);
-    sessionStorage.setItem("auth_mode", "welcome");
     const { error } = await supabase.auth.signInWithOtp({
       email: trimmed,
       options: {

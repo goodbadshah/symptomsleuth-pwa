@@ -3,22 +3,22 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { readStorage } from "@/utils/storage";
 
 /**
  * OAuth / magic-link callback.
  *
  * Must run on the client: Supabase's default PKCE flow stores the code verifier
  * in the browser, so `exchangeCodeForSession` only works where that storage
- * lives. A server route handler hits the error path and returns JSON, which is
- * what the user sees when Google sign-in "shows JSON".
+ * lives. A server route handler hits the error path and returns JSON.
  *
- * Modes (read from sessionStorage, set by the page that initiated the flow —
- * never as a URL query string, since Supabase's redirect_to allowlist matcher
- * silently rejects URLs that carry queries and falls back to Site URL):
- *   - signin  (returning member from landing page): look up their profile.
- *             Found → /log. Not found → /upgrade?missing=1.
- *   - welcome (post-checkout from /welcome): /welcome resumes migration.
- *   - (unset) treated as signin.
+ * Routing decision uses ground truth, not a passed-in mode parameter:
+ *   1. Profile exists in Supabase → /log (or /welcome if `awaiting_account_setup`).
+ *   2. No profile yet, but local state says payment finished → /welcome to migrate.
+ *   3. Otherwise no record of this user → /upgrade?missing=1 to start a trial.
+ *
+ * The earlier `sessionStorage` mode trick failed for magic links: Gmail opens
+ * the link in a fresh tab, and sessionStorage isn't shared across tabs.
  */
 function CallbackContent() {
   const router = useRouter();
@@ -34,8 +34,6 @@ function CallbackContent() {
         return;
       }
 
-      const mode = sessionStorage.getItem("auth_mode") ?? "signin";
-      sessionStorage.removeItem("auth_mode");
       const code = params.get("code");
       const errParam = params.get("error_description") ?? params.get("error");
 
@@ -58,11 +56,6 @@ function CallbackContent() {
 
       if (cancelled) return;
 
-      if (mode === "welcome") {
-        router.replace("/welcome");
-        return;
-      }
-
       if (!user) {
         router.replace("/upgrade?missing=1");
         return;
@@ -76,17 +69,21 @@ function CallbackContent() {
 
       if (cancelled) return;
 
-      if (!profile) {
-        router.replace("/upgrade?missing=1");
+      if (profile) {
+        router.replace(profile.awaiting_account_setup ? "/welcome" : "/log");
         return;
       }
 
-      if (profile.awaiting_account_setup) {
+      // No profile row yet. If this device just finished payment, the migration
+      // hasn't run — send them to /welcome to complete it. Otherwise treat as
+      // a returning sign-in for an unknown account.
+      const localState = readStorage();
+      if (localState?.profile.awaitingAccountSetup) {
         router.replace("/welcome");
         return;
       }
 
-      router.replace("/log");
+      router.replace("/upgrade?missing=1");
     }
 
     void run();

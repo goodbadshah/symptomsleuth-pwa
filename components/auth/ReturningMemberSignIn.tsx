@@ -17,9 +17,9 @@ export default function ReturningMemberSignIn() {
       setErrorMsg("Sign-in is temporarily unavailable.");
       return;
     }
-    // Mode lives in sessionStorage rather than the redirect_to query string;
-    // Supabase's allowlist matcher silently rejects URLs with queries.
-    sessionStorage.setItem("auth_mode", "signin");
+    // No query string on the redirect — Supabase's allowlist matcher rejects
+    // URLs with queries and bounces them to Site URL. The callback page
+    // disambiguates intent from Supabase profile + localStorage.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -42,7 +42,6 @@ export default function ReturningMemberSignIn() {
     }
     setStatus("sending");
     setErrorMsg(null);
-    sessionStorage.setItem("auth_mode", "signin");
     const { error } = await supabase.auth.signInWithOtp({
       email: trimmed,
       options: {
