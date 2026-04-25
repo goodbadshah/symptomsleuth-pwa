@@ -98,11 +98,14 @@ function WelcomeContent() {
   }, [plan, showPaymentForm]);
 
   // Exit routes:
-  //  - Fully linked → /log (nothing more to do here)
+  //  - Fully linked → /install (which itself bounces to /log if the app is
+  //    already in standalone mode). Routing to /log directly here would race
+  //    runMigration's own router.replace("/install") and win, because the
+  //    effect fires after SET_SUPABASE_LINKED batches.
   //  - No plan in URL and nothing pending → back to plan picker
   useEffect(() => {
     if (profile.supabaseLinked) {
-      router.replace("/log");
+      router.replace("/install");
       return;
     }
     if (!plan && !profile.awaitingAccountSetup) {
