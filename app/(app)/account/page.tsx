@@ -127,6 +127,18 @@ export default function AccountPage() {
     router.replace("/onboarding");
   }
 
+  async function handleSignOut() {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Continue regardless - local reset is the source of truth
+      }
+    }
+    dispatch({ type: "RESET" });
+    router.replace("/");
+  }
+
   function handleLoadDemo() {
     const demoState = generateDemoData(demoCondition);
     dispatch({ type: "HYDRATE", payload: demoState });
@@ -385,6 +397,31 @@ export default function AccountPage() {
             </p>
           </div>
         </div>
+
+        {/* ── Session section ── */}
+        {profile.supabaseLinked && (
+          <div style={{ padding: "20px 0", borderBottom: "1px solid var(--border)" }}>
+            <EyebrowTag label="Session" />
+            <div style={{ marginTop: 12 }}>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: "14px",
+                  color: "var(--text-secondary)",
+                  background: "none",
+                  border: "1px solid var(--border)",
+                  borderRadius: "0.75rem",
+                  padding: "10px 16px",
+                  cursor: "pointer",
+                  transition: "border-color 200ms cubic-bezier(0.16,1,0.3,1)",
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Data section ── */}
         <div style={{ padding: "20px 0", borderBottom: "1px solid var(--border)" }}>
