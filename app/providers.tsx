@@ -5,6 +5,7 @@ import {
   useContext,
   useReducer,
   useEffect,
+  useState,
   type Dispatch,
 } from "react";
 import { readStorage, writeStorage } from "@/utils/storage";
@@ -247,6 +248,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 interface AppContextValue {
   state: AppState;
   dispatch: Dispatch<AppAction>;
+  hydrated: boolean;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -255,6 +257,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -262,12 +265,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (stored) {
       dispatch({ type: "HYDRATE", payload: stored });
     }
+    setHydrated(true);
   }, []);
 
-  // Persist to localStorage on every state change
+  // Persist to localStorage on every state change (after hydration only,
+  // so the empty initial state never overwrites stored data on cold open)
   useEffect(() => {
+    if (!hydrated) return;
     writeStorage(state);
-  }, [state]);
+  }, [state, hydrated]);
 
   // Apply data-theme attribute to <html> based on profile.theme preference
   useEffect(() => {
@@ -284,7 +290,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [state.profile.theme]);
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state, dispatch, hydrated }}>
       {children}
     </AppContext.Provider>
   );

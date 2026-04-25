@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/app/providers";
 import { useTrial } from "@/hooks/useTrial";
 import { generateDemoData, DEMO_CONDITIONS } from "@/utils/generateDemoData";
 import { supabase } from "@/lib/supabase";
+import { clearStorage } from "@/utils/storage";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Eyebrow tag helper
@@ -91,6 +92,22 @@ export default function AccountPage() {
   const [resetStep, setResetStep] = useState<"idle" | "confirm">("idle");
   const [demoCondition, setDemoCondition] = useState("Migraine");
   const [demoLoaded, setDemoLoaded] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled) setHasSession(!!data.session);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(!!session);
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   // Auth state
   const hasSupabaseAuth = !!profile.userId && profile.userId.includes("-");
@@ -135,8 +152,10 @@ export default function AccountPage() {
         // Continue regardless - local reset is the source of truth
       }
     }
-    dispatch({ type: "RESET" });
-    router.replace("/");
+    // Clear storage directly and hard-navigate so the (app) layout's
+    // "no conditions → /onboarding" redirect effect can't race us.
+    clearStorage();
+    window.location.replace("/");
   }
 
   function handleLoadDemo() {
@@ -399,7 +418,7 @@ export default function AccountPage() {
         </div>
 
         {/* ── Session section ── */}
-        {profile.supabaseLinked && (
+        {(profile.supabaseLinked || hasSession) && (
           <div style={{ padding: "20px 0", borderBottom: "1px solid var(--border)" }}>
             <EyebrowTag label="Session" />
             <div style={{ marginTop: 12 }}>

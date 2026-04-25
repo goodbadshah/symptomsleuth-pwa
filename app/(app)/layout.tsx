@@ -81,7 +81,7 @@ const tabs = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { state } = useAppState();
+  const { state, hydrated } = useAppState();
   const activeTabIndex = Math.max(0, tabs.findIndex((t) => pathname.includes(t.match)));
   const mainRef = useRef<HTMLElement>(null);
 
@@ -90,7 +90,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Exclude /upgrade: the plan picker must remain reachable so a user who
   // abandoned mid-flow can start a new plan. /welcome will itself reset the
   // pending flag once a fresh intent is started.
+  // Wait for hydration — otherwise the initial empty state redirects logged-in
+  // users to /onboarding on every refresh.
   useEffect(() => {
+    if (!hydrated) return;
     if (state.profile.conditions.length === 0) {
       router.replace("/onboarding");
       return;
@@ -98,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (state.profile.awaitingAccountSetup && !pathname.startsWith("/upgrade")) {
       router.replace("/welcome");
     }
-  }, [state.profile.conditions, state.profile.awaitingAccountSetup, pathname, router]);
+  }, [hydrated, state.profile.conditions, state.profile.awaitingAccountSetup, pathname, router]);
 
   // Default landing tab - redirect to /insights when loggedDaysCount >= 4
   // Only fires once per session on cold open to /log, respects user navigation.
@@ -123,6 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     mainRef.current?.scrollTo({ top: 0 });
   }, [pathname]);
 
+  if (!hydrated) return null;
   if (state.profile.conditions.length === 0) return null;
 
   return (
