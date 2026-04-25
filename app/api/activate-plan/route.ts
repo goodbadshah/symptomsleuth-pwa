@@ -57,14 +57,27 @@ export async function POST(req: NextRequest) {
 
       let customerId = typeof intent.customer === "string" ? intent.customer : intent.customer?.id;
       if (!customerId) {
-        const customer = await stripe.customers.create({ email: emailTrim });
+        // Idempotency keys keyed on intentId so a retried request (mobile
+        // network blip, double-submit) replays the cached response instead
+        // of creating a duplicate customer or hitting Stripe's "PaymentMethod
+        // previously used" error on a second attach.
+        const customer = await stripe.customers.create(
+          { email: emailTrim },
+          { idempotencyKey: `customer:${intentId}` },
+        );
         customerId = customer.id;
-        // Attach the used payment method to the customer so future charges /
-        // portal access have something to reference.
         if (typeof intent.payment_method === "string") {
-          await stripe.paymentMethods.attach(intent.payment_method, { customer: customerId });
+          await stripe.paymentMethods.attach(
+            intent.payment_method,
+            { customer: customerId },
+            { idempotencyKey: `pm-attach:${intentId}` },
+          );
         }
-        await stripe.paymentIntents.update(intentId, { customer: customerId });
+        await stripe.paymentIntents.update(
+          intentId,
+          { customer: customerId },
+          { idempotencyKey: `pi-update:${intentId}` },
+        );
       }
 
       return NextResponse.json({
@@ -99,20 +112,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const customer = await stripe.customers.create({
-      email: emailTrim,
-      payment_method: paymentMethod,
-      invoice_settings: { default_payment_method: paymentMethod },
-    });
+    // Idempotency keys keyed on intentId. Without these, a retried POST
+    // (mobile network blip, swipe-back, double-submit) attempts to attach
+    // the same PaymentMethod to a second new Customer and Stripe rejects it
+    // with "PaymentMethod previously used or detached, may not be used again."
+    const customer = await stripe.customers.create(
+      {
+        email: emailTrim,
+        payment_method: paymentMethod,
+        invoice_settings: { default_payment_method: paymentMethod },
+      },
+      { idempotencyKey: `customer:${intentId}` },
+    );
 
-    const subscription = await stripe.subscriptions.create({
-      customer: customer.id,
-      items: [{ price: priceId }],
-      trial_period_days: TRIAL_DAYS[plan],
-      payment_behavior: "default_incomplete",
-      payment_settings: { save_default_payment_method: "on_subscription" },
-      expand: ["latest_invoice.payment_intent"],
-    });
+    const subscription = await stripe.subscriptions.create(
+      {
+        customer: customer.id,
+        items: [{ price: priceId }],
+        trial_period_days: TRIAL_DAYS[plan],
+        payment_behavior: "default_incomplete",
+        payment_settings: { save_default_payment_method: "on_subscription" },
+        expand: ["latest_invoice.payment_intent"],
+      },
+      { idempotencyKey: `subscription:${intentId}` },
+    );
 
     const trialEndsAt = subscription.trial_end
       ? new Date(subscription.trial_end * 1000).toISOString()

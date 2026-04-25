@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "./providers";
+import ServiceWorkerRegister from "@/components/ui/ServiceWorkerRegister";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -54,12 +55,16 @@ export default function RootLayout({
       className={`${fraunces.variable} ${dmSans.variable} ${dmMono.variable}`}
     >
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+        <link rel="apple-touch-icon" href="/icons/symptomsleuth-icon-194.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icons/symptomsleuth-icon-194.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icons/symptomsleuth-icon-512.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="SymptomSleuth" />
       </head>
       <body className="antialiased">
+        <ServiceWorkerRegister />
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

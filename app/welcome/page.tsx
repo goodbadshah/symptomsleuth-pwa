@@ -515,26 +515,41 @@ function PaymentForm({ plan, intentType, onActivated }: PaymentFormProps) {
 
 function AccountAuth() {
   const router = useRouter();
+  const params = useSearchParams();
   const { state, dispatch } = useAppState();
   const { profile } = state;
 
   const billingEmail = profile.email ?? "";
+  const migrateError = params.get("migrate_error") === "1";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState<
-    "idle" | "signing-in" | "migrating" | "signin-error" | "migration-error"
-  >("idle");
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    "idle" | "preparing" | "signing-in" | "migrating" | "signin-error" | "migration-error"
+  >(migrateError ? "migration-error" : "preparing");
+  const [errorMsg, setErrorMsg] = useState<string | null>(
+    migrateError ? "We couldn't save your data. Please sign in again to retry." : null,
+  );
 
-  // After a Google OAuth round-trip the callback page may route back here
-  // while a Supabase session already exists - run migration immediately.
+  // Bug 2 fix: clear any lingering session before showing auth options. The
+  // old auto-migrate useEffect would call getUser() and run migrateLocalData
+  // against whatever session happened to be alive (e.g. an earlier email
+  // sign-in), upserting the new Stripe data onto the wrong account. By
+  // signing out first we force a deliberate Google-or-password choice.
+  // OAuth signup migration now happens in /auth/callback; email signup
+  // migration happens inline in handleSignUp.
   useEffect(() => {
-    if (!supabase || profile.supabaseLinked) return;
+    if (!supabase || profile.supabaseLinked || migrateError) {
+      if (status === "preparing") setStatus("idle");
+      return;
+    }
     let cancelled = false;
-    supabase.auth.getUser().then(async ({ data }) => {
-      const authUser = data?.user;
-      if (!authUser || cancelled) return;
-      await runMigration(authUser.id);
+    // scope: 'local' — wipe the client's stored token only. A 'global' signOut
+    // would hit the server to revoke and throw "Invalid Refresh Token" if the
+    // persisted token references a user who no longer exists (e.g. after the
+    // FK migration's orphan cleanup), leaving the gotrue client in a broken
+    // state that breaks the next signInWithOAuth.
+    void supabase.auth.signOut({ scope: "local" }).finally(() => {
+      if (!cancelled) setStatus("idle");
     });
     return () => {
       cancelled = true;
@@ -554,7 +569,7 @@ function AccountAuth() {
     dispatch({ type: "SET_USER_ID", payload: userId });
     dispatch({ type: "SET_SUPABASE_LINKED", payload: true });
     dispatch({ type: "SET_AWAITING_ACCOUNT_SETUP", payload: false });
-    router.replace("/log");
+    router.replace("/install");
   }
 
   async function handleGoogle() {
@@ -660,7 +675,15 @@ function AccountAuth() {
         </p>
       </div>
 
-      {status === "migrating" ? (
+      {status === "preparing" ? (
+        <div className="flex flex-col items-center gap-4 my-8">
+          <span
+            className="inline-block w-8 h-8 rounded-full border-2 border-current border-t-transparent animate-spin"
+            style={{ color: "var(--accent)" }}
+            aria-label="Preparing"
+          />
+        </div>
+      ) : status === "migrating" ? (
         <div className="flex flex-col items-center gap-4 my-8">
           <span
             className="inline-block w-8 h-8 rounded-full border-2 border-current border-t-transparent animate-spin"

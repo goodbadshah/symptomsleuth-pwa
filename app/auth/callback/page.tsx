@@ -3,28 +3,32 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useAppState } from "@/app/providers";
+import { hydrateFromSupabase } from "@/utils/hydrateFromSupabase";
+import { migrateLocalData } from "@/utils/migrateLocalData";
 import { readStorage } from "@/utils/storage";
 
 /**
  * Auth landing page.
  *
- * Reached after Google OAuth, after signInWithPassword (no code), and after
- * a password reset (no code, session already established). When a `code`
- * param is present we exchange it for a session; otherwise we just consult
- * the existing session.
+ * Reached after Google OAuth, after signInWithPassword, and after a password
+ * reset. When a `code` param is present we exchange it for a session;
+ * otherwise we consult the existing session.
  *
- * Must run on the client: Supabase's default PKCE flow stores the code
- * verifier in the browser, so `exchangeCodeForSession` only works where
- * that storage lives.
- *
- * Routing decision uses ground truth:
- *   1. Profile exists in Supabase → /log (or /welcome if `awaiting_account_setup`).
- *   2. No profile yet, but local state says payment finished → /welcome to migrate.
- *   3. Otherwise no record of this user → /upgrade?missing=1 to start a trial.
+ * Branches:
+ *   1. Profile exists in Supabase → hydrate local state from Supabase, then
+ *      route to /log (or /welcome if the row says awaiting_account_setup).
+ *      Without hydration, /(app) sees conditions: [] and bounces to onboarding.
+ *   2. No profile + local says payment finished → this is the OAuth signup
+ *      round-trip. Run migrateLocalData here so we never bounce through
+ *      /welcome's State 2 (which would auto-migrate against any lingering
+ *      session — the original Bug 2 path).
+ *   3. Otherwise → /upgrade?missing=1.
  */
 function CallbackContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { dispatch } = useAppState();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,16 +76,30 @@ function CallbackContent() {
       if (cancelled) return;
 
       if (profile) {
+        const hydrated = await hydrateFromSupabase(
+          user.id,
+          user.created_at ?? new Date().toISOString(),
+        );
+        if (cancelled) return;
+        if (hydrated) {
+          dispatch({ type: "HYDRATE", payload: hydrated });
+        }
         router.replace(profile.awaiting_account_setup ? "/welcome" : "/log");
         return;
       }
 
-      // No profile row yet. If this device just finished payment, the migration
-      // hasn't run — send them to /welcome to complete it. Otherwise treat as
-      // a returning sign-in for an unknown account.
       const localState = readStorage();
       if (localState?.profile.awaitingAccountSetup) {
-        router.replace("/welcome");
+        const result = await migrateLocalData(user.id, localState);
+        if (cancelled) return;
+        if (result.ok) {
+          dispatch({ type: "SET_USER_ID", payload: user.id });
+          dispatch({ type: "SET_SUPABASE_LINKED", payload: true });
+          dispatch({ type: "SET_AWAITING_ACCOUNT_SETUP", payload: false });
+          router.replace("/install");
+          return;
+        }
+        router.replace("/welcome?migrate_error=1");
         return;
       }
 
@@ -92,7 +110,7 @@ function CallbackContent() {
     return () => {
       cancelled = true;
     };
-  }, [params, router]);
+  }, [params, router, dispatch]);
 
   return (
     <div

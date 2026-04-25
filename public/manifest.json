@@ -8,18 +8,25 @@
   "start_url": "/",
   "scope": "/",
   "orientation": "portrait",
+  "categories": ["health", "medical", "lifestyle"],
   "icons": [
     {
-      "src": "/icons/icon-192.svg",
+      "src": "/icons/symptomsleuth-icon-194.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.svg",
+      "src": "/icons/symptomsleuth-icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/symptomsleuth-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
