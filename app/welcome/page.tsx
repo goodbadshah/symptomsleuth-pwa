@@ -518,18 +518,16 @@ function AccountAuth() {
   const { state, dispatch } = useAppState();
   const { profile } = state;
 
-  const [mode, setMode] = useState<"idle" | "email">("idle");
-  const [email, setEmail] = useState(profile.email ?? "");
-  // `signin-error` → problem talking to Supabase before a session exists.
-  // `migration-error` → signed in but saving local data to Supabase failed.
-  // These use different copy so users see the correct reason.
+  const billingEmail = profile.email ?? "";
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState<
-    "idle" | "signing-in" | "sent" | "migrating" | "signin-error" | "migration-error"
+    "idle" | "signing-in" | "migrating" | "signin-error" | "migration-error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // If the user returns here after a magic-link redirect, Supabase will have
-  // an active session - kick off migration immediately.
+  // After a Google OAuth round-trip the callback page may route back here
+  // while a Supabase session already exists - run migration immediately.
   useEffect(() => {
     if (!supabase || profile.supabaseLinked) return;
     let cancelled = false;
@@ -567,9 +565,6 @@ function AccountAuth() {
     }
     setStatus("signing-in");
     setErrorMsg(null);
-    // No query string on the redirect: Supabase's allowlist matcher silently
-    // rejects URLs with queries and falls back to Site URL. The callback page
-    // figures out where to route via Supabase profile + localStorage.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -582,33 +577,55 @@ function AccountAuth() {
     }
   }
 
-  async function handleEmailSubmit(e: React.FormEvent) {
+  async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     if (!supabase) {
       setStatus("signin-error");
-      setErrorMsg("Sign-in is temporarily unavailable.");
+      setErrorMsg("Sign-up is temporarily unavailable.");
       return;
     }
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed.includes("@")) {
+    const emailTrim = billingEmail.trim().toLowerCase();
+    if (!emailTrim.includes("@")) {
       setStatus("signin-error");
-      setErrorMsg("Please enter a valid email address.");
+      setErrorMsg("We don't have your billing email. Refresh and try again.");
       return;
     }
+    if (password.length < 8) {
+      setStatus("signin-error");
+      setErrorMsg("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setStatus("signin-error");
+      setErrorMsg("Passwords don't match.");
+      return;
+    }
+
     setStatus("signing-in");
     setErrorMsg(null);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: trimmed,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+
+    const { data, error } = await supabase.auth.signUp({
+      email: emailTrim,
+      password,
     });
+
     if (error) {
       setStatus("signin-error");
       setErrorMsg(error.message);
       return;
     }
-    setStatus("sent");
+    if (!data.session || !data.user) {
+      // Email-confirmation is enabled on the Supabase project. We don't want
+      // that for SymptomSleuth because Stripe already verified the email.
+      // Surface a clear error rather than dropping the user into magic-link land.
+      setStatus("signin-error");
+      setErrorMsg(
+        "Account created but needs email confirmation. Disable 'Confirm email' in Supabase Auth settings.",
+      );
+      return;
+    }
+
+    await runMigration(data.user.id);
   }
 
   async function handleRetry() {
@@ -683,42 +700,6 @@ function AccountAuth() {
             Try again
           </button>
         </div>
-      ) : status === "sent" ? (
-        <div
-          className="mb-8"
-          style={{
-            padding: "6px",
-            borderRadius: "1.25rem",
-            boxShadow: "0 0 0 1px var(--bezel-ring)",
-            backgroundColor: "var(--bezel-outer-bg)",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "var(--bg-surface)",
-              boxShadow: "var(--bezel-inset-shadow)",
-              borderRadius: "0.875rem",
-              padding: "18px 20px",
-            }}
-          >
-            <p
-              className="text-base mb-2"
-              style={{
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-body)",
-                fontWeight: 500,
-              }}
-            >
-              Check your email
-            </p>
-            <p
-              className="text-sm"
-              style={{ color: "var(--text-secondary)", fontFamily: "var(--font-body)" }}
-            >
-              We sent a link to {email}. Open it on this device to finish setting up your account.
-            </p>
-          </div>
-        </div>
       ) : (
         <div className="flex flex-col gap-3 mb-6">
           <button
@@ -744,80 +725,115 @@ function AccountAuth() {
             <span className="text-sm font-medium">Continue with Google</span>
           </button>
 
-          {mode === "idle" ? (
-            <button
-              onClick={() => setMode("email")}
-              className="flex items-center justify-center gap-3 tap-feedback"
+          <div className="flex items-center gap-3 my-1">
+            <div style={{ flex: 1, borderTop: "1px solid var(--border)" }} />
+            <span
+              className="text-xs"
               style={{
-                height: "52px",
-                borderRadius: "1.25rem",
+                color: "var(--text-secondary)",
+                fontFamily: "var(--font-body)",
+                textTransform: "uppercase",
+                letterSpacing: "0.15em",
+                fontSize: "10px",
+              }}
+            >
+              or
+            </span>
+            <div style={{ flex: 1, borderTop: "1px solid var(--border)" }} />
+          </div>
+
+          <form onSubmit={handleSignUp} className="flex flex-col gap-2">
+            <label htmlFor="welcome-email" className="sr-only">
+              Email address
+            </label>
+            <input
+              id="welcome-email"
+              type="email"
+              autoComplete="email"
+              value={billingEmail}
+              readOnly
+              style={{
+                height: "48px",
+                padding: "0 14px",
+                borderRadius: "0.75rem",
+                border: "1px solid var(--border)",
+                backgroundColor: "var(--bg-surface)",
+                color: "var(--text-secondary)",
+                fontFamily: "var(--font-body)",
+                fontSize: "15px",
+                outline: "none",
+              }}
+            />
+            <label htmlFor="welcome-password" className="sr-only">
+              Password
+            </label>
+            <input
+              id="welcome-password"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              placeholder="Password (min 8 characters)"
+              disabled={status === "signing-in"}
+              style={{
+                height: "48px",
+                padding: "0 14px",
+                borderRadius: "0.75rem",
                 border: "1px solid var(--border)",
                 backgroundColor: "var(--bg-surface)",
                 color: "var(--text-primary)",
                 fontFamily: "var(--font-body)",
-                cursor: "pointer",
+                fontSize: "15px",
+                outline: "none",
               }}
-            >
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                <rect x="1.75" y="3.75" width="14.5" height="10.5" rx="1.25" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M2 4.5 9 10l7-5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="text-sm font-medium">Set up with Email</span>
-            </button>
-          ) : (
-            <form
-              onSubmit={handleEmailSubmit}
-              className="flex flex-col gap-2"
+            />
+            <label htmlFor="welcome-password-confirm" className="sr-only">
+              Confirm password
+            </label>
+            <input
+              id="welcome-password-confirm"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={confirmPassword}
+              onChange={(ev) => setConfirmPassword(ev.target.value)}
+              placeholder="Confirm password"
+              disabled={status === "signing-in"}
               style={{
-                padding: "6px",
-                borderRadius: "1.25rem",
+                height: "48px",
+                padding: "0 14px",
+                borderRadius: "0.75rem",
                 border: "1px solid var(--border)",
                 backgroundColor: "var(--bg-surface)",
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-body)",
+                fontSize: "15px",
+                outline: "none",
+              }}
+            />
+            <button
+              type="submit"
+              disabled={status === "signing-in"}
+              style={{
+                height: "52px",
+                borderRadius: "1.25rem",
+                backgroundColor: status === "signing-in" ? "var(--text-secondary)" : "var(--accent)",
+                color: "#ffffff",
+                border: "none",
+                fontFamily: "var(--font-body)",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: status === "signing-in" ? "not-allowed" : "pointer",
+                marginTop: "4px",
               }}
             >
-              <label htmlFor="welcome-email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="welcome-email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(ev) => setEmail(ev.target.value)}
-                placeholder="you@example.com"
-                disabled={status === "signing-in"}
-                style={{
-                  height: "44px",
-                  padding: "0 12px",
-                  borderRadius: "0.75rem",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  color: "var(--text-primary)",
-                  fontFamily: "var(--font-body)",
-                  fontSize: "15px",
-                  outline: "none",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={status === "signing-in"}
-                style={{
-                  height: "44px",
-                  borderRadius: "0.75rem",
-                  backgroundColor: "var(--accent)",
-                  color: "#ffffff",
-                  border: "none",
-                  fontFamily: "var(--font-body)",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  cursor: status === "signing-in" ? "not-allowed" : "pointer",
-                }}
-              >
-                {status === "signing-in" ? "Sending magic link…" : "Send magic link"}
-              </button>
-            </form>
-          )}
+              {status === "signing-in" ? "Creating account…" : "Create account"}
+            </button>
+          </form>
+
           {errorMsg && (
             <p
               className="text-xs text-center mt-1"

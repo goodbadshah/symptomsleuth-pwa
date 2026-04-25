@@ -6,19 +6,21 @@ import { supabase } from "@/lib/supabase";
 import { readStorage } from "@/utils/storage";
 
 /**
- * OAuth / magic-link callback.
+ * Auth landing page.
  *
- * Must run on the client: Supabase's default PKCE flow stores the code verifier
- * in the browser, so `exchangeCodeForSession` only works where that storage
- * lives. A server route handler hits the error path and returns JSON.
+ * Reached after Google OAuth, after signInWithPassword (no code), and after
+ * a password reset (no code, session already established). When a `code`
+ * param is present we exchange it for a session; otherwise we just consult
+ * the existing session.
  *
- * Routing decision uses ground truth, not a passed-in mode parameter:
+ * Must run on the client: Supabase's default PKCE flow stores the code
+ * verifier in the browser, so `exchangeCodeForSession` only works where
+ * that storage lives.
+ *
+ * Routing decision uses ground truth:
  *   1. Profile exists in Supabase → /log (or /welcome if `awaiting_account_setup`).
  *   2. No profile yet, but local state says payment finished → /welcome to migrate.
  *   3. Otherwise no record of this user → /upgrade?missing=1 to start a trial.
- *
- * The earlier `sessionStorage` mode trick failed for magic links: Gmail opens
- * the link in a fresh tab, and sessionStorage isn't shared across tabs.
  */
 function CallbackContent() {
   const router = useRouter();

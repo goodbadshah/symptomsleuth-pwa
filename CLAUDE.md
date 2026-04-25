@@ -11,7 +11,7 @@ SymptomSleuth is a PWA that helps people with chronic conditions (migraine, IBS,
 - **Charts:** Recharts for symptom timeline visualization
 - **AI:** Anthropic Claude API (claude-sonnet-4-5-20250929) for doctor report generation, AI Sleuth chat, and pattern narrative
 - **Payments:** Stripe Checkout Sessions (subscription mode for annual/monthly; payment mode for lifetime)
-- **Auth:** Supabase Auth - Google OAuth and email magic link. Account creation runs at `/welcome` after the user completes Stripe Checkout, not at the start of onboarding. Returning members sign in from the landing page. Anonymous/UUID-only mode is retired - every user either authenticates at `/welcome` or is pre-auth with local-only data during the onboarding/trial window. Apple Sign-In is deferred until App Store submission.
+- **Auth:** Supabase Auth - Google OAuth and email + password. Account creation runs at `/welcome` after the user completes Stripe Checkout, not at the start of onboarding. Returning members sign in from the landing page. Magic links are not used for sign-in (they break in PWA standalone mode because the email link opens in an external browser, not the installed PWA, leaving the session in the wrong context). Password reset is the one place a recovery link is sent - rare, friction acceptable. **Supabase config:** disable "Confirm email" in the project's Auth settings. Stripe already verified the billing email at checkout; requiring a second confirmation reintroduces the magic-link friction we're avoiding. Anonymous/UUID-only mode is retired - every user either authenticates at `/welcome` or is pre-auth with local-only data during the onboarding/trial window. Apple Sign-In is deferred until App Store submission.
 - **Backend:** Supabase (anonymous community data aggregation, pattern computation, encrypted profile sync)
 - **Hosting:** Vercel
 - **PWA:** next-pwa (or @ducanh2912/next-pwa) with Workbox for service worker, offline support, and install prompt
@@ -628,13 +628,13 @@ Rationale: In the habit-formation phase (days 0–3), the primary job is "record
 
 SymptomSleuth uses end-to-end encrypted cloud sync. The server stores only an encrypted blob - it cannot decrypt personal health data under any circumstances.
 
-User identity is seeded from Stripe checkout email - no separate account creation step. When the user completes onboarding card collection:
-1. Stripe creates a Customer with the email they enter
-2. Supabase finds or creates an account for that email via `supabase.auth.signInWithOtp({ email })` (magic link, sent automatically after checkout)
-3. On first app open after magic link click, `auth.uid` becomes `profile.userId`
-4. Until the magic link is clicked, `profile.userId` remains the local UUID generated at onboarding start
+User identity is created at `/welcome` after Stripe payment succeeds. The flow:
+1. User enters their billing email inside Stripe Elements; payment confirms (SetupIntent for sub plans, PaymentIntent for lifetime).
+2. The `/welcome` page transitions to State 2 ("Secure your data") with the billing email pre-filled and read-only.
+3. User picks a password (min 8 chars, confirmed) → `supabase.auth.signUp({ email, password })`. Supabase returns an active session immediately because email-confirmation is disabled on the project.
+4. `auth.uid` becomes `profile.userId`; `migrateLocalData` upserts the profile row and any captured `daily_logs`; user routes to `/log`.
 
-Google / Facebook OAuth is available post-onboarding as an optional enhancement (Settings → "Sync & Backup" → "Add Google sign-in"). It links to the existing Supabase account seeded by Stripe email. This eliminates the auth screen from onboarding entirely.
+Google OAuth is offered as a one-tap alternative on the same `/welcome` State 2 surface, and on the landing page for returning members. Returning members on the landing page sign in with email + password (`signInWithPassword`) and use a "Forgot password?" link if they need recovery. Password reset emails the only recovery link (`resetPasswordForEmail` → `/auth/reset`); we do not use magic links anywhere else.
 
 ```
 Key generation (first onboarding - after card collected):
@@ -652,7 +652,7 @@ Sync push (after every Save):
 4. Server stores encrypted blob in encrypted_profiles table by userId (upsert)
 
 Sync pull (new device, after sign-in):
-1. User signs in with Google/Facebook or magic link → Supabase Auth session established
+1. User signs in with Google or email + password → Supabase Auth session established
 2. Prompt for 6-digit recovery PIN
 3. Fetch wrapped key from server: GET /api/sync/wrapped-key
 4. Rate limit: max 10 PIN attempts; lockout after 10 failures until re-auth
@@ -661,7 +661,7 @@ Sync pull (new device, after sign-in):
 7. GET /api/sync/pull → decrypt blob → hydrate AppState
 
 Recovery chain:
-  Forgot PIN → re-authenticate with Google or magic link → reset PIN → new key setup
+  Forgot PIN → re-authenticate with Google or email + password (or password reset) → reset PIN → new key setup
 ```
 
 **Supabase schema additions:**
@@ -717,8 +717,9 @@ Onboarding is now plan-first, account-last. New users complete condition + sympt
 Screen 0 - Landing (`app/page.tsx`):
 - Keep the existing hero, value-prop, privacy, and pricing sections.
 - Primary CTA stays "Start free trial" → `/onboarding`.
-- Below the hero CTA, appended after the reassurance line: a hairline rule, a "Already a member?" label, and two outlined buttons - "Continue with Google" (Supabase OAuth) and "Continue with Email" (magic link via `supabase.auth.signInWithOtp`).
-- Sign-in returns to `/auth/callback?mode=signin`, which looks up the profile: found → `/log`; not found → `/upgrade?missing=1` with a banner reading "No account found. Start your free trial below."
+- Below the hero CTA, appended after the reassurance line: a hairline rule, a "Already a member?" label, "Continue with Google" (Supabase OAuth), an OR divider, an email + password form (`signInWithPassword`), and a "Forgot password?" text link beneath the submit button.
+- "Forgot password?" calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: '/auth/reset' })`. The recovery email is the only place we still use a Supabase email link.
+- Sign-in returns to `/auth/callback`, which looks up the profile: found → `/log`; not found → `/upgrade?missing=1` with a banner reading "No account found. Start your free trial below."
 
 Screen 1 - Condition Select:
 - Grid of tappable condition cards. Multi-select.
@@ -754,12 +755,12 @@ Payment and account creation both live on `/welcome`, which sits outside the `(a
 
 *State 2 - Account auth (after payment succeeds, before `supabaseLinked`).*
 
-- Heading: "One last thing - secure your data." Subheading: "Create your account so your symptom history syncs across devices and is never lost."
-- Two stacked outlined buttons: "Continue with Google" and "Set up with Email" (magic link; the email field pre-fills from the billing email).
+- Heading: "Secure your data before we start." Subheading: "Create your account so your symptom history syncs across devices and is never lost."
+- "Continue with Google" button at the top, then an OR divider, then a form: read-only email (pre-filled from billing), password (min 8), confirm password, "Create account" submit. Form calls `supabase.auth.signUp({ email, password })`. Supabase must have "Confirm email" disabled — Stripe already verified the email and we don't want a second email round-trip.
 - Trust line: "Your logs are encrypted. We cannot read them."
 - No skip option. The `(app)/layout.tsx` guard redirects back to `/welcome` from every app route while `awaitingAccountSetup` is true.
 
-On successful sign-in at `/welcome`:
+On successful sign-up or Google sign-in at `/welcome`:
 1. Supabase establishes the auth session.
 2. `migrateLocalData(userId, state)` (in `utils/migrateLocalData.ts`) upserts the `profiles` row, then inserts any `daily_logs` captured before migration. On any failure, localStorage is NOT cleared and the user sees a retry button. On success, `profile.userId` is set to `auth.uid()`, `supabaseLinked` flips to `true`, `awaitingAccountSetup` to `false`, and the user is routed to `/log`.
 
@@ -1071,9 +1072,10 @@ app/
     SymptomSetup.tsx
     TrialConfirmation.tsx     # Screen 3 - CTA "Choose your plan" routes to /upgrade
   welcome/
-    page.tsx                  # Post-checkout account setup (Google / email magic link). Outside (app)/ so no bottom nav.
+    page.tsx                  # Post-checkout account setup (Google / email + password). Outside (app)/ so no bottom nav.
   auth/
-    callback/route.ts         # OAuth + magic-link exchange; modes=signin|welcome control routing
+    callback/page.tsx         # OAuth code exchange + post-signin routing (no magic-link mode logic)
+    reset/page.tsx            # Password reset destination - exchanges recovery code, sets new password via updateUser
   (app)/
     layout.tsx                # app shell with bottom nav (use client); guards onto /onboarding or /welcome
     log/page.tsx
@@ -1104,7 +1106,7 @@ components/
     SymptomSetup.tsx
     TrialConfirmation.tsx
   auth/
-    ReturningMemberSignIn.tsx   # Google + email-magic-link block appended to the landing page for existing members.
+    ReturningMemberSignIn.tsx   # Google + email/password sign-in (with "Forgot password?") appended to the landing page for existing members.
   log/
     DailyLog.tsx
     SeverityChipSelector.tsx  # THE canonical severity input - 5 chips, tap-to-commit. Used everywhere severity is captured (symptoms + context fields).

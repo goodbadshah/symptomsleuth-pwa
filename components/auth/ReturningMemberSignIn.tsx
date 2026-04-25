@@ -1,67 +1,103 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-type Mode = "idle" | "email";
-type Status = "idle" | "sending" | "sent" | "error";
+type Status = "idle" | "signing-in" | "reset-sent" | "error";
 
 export default function ReturningMemberSignIn() {
-  const [mode, setMode] = useState<Mode>("idle");
+  const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   async function handleGoogle() {
     if (!supabase) {
+      setStatus("error");
       setErrorMsg("Sign-in is temporarily unavailable.");
       return;
     }
-    // No query string on the redirect — Supabase's allowlist matcher rejects
-    // URLs with queries and bounces them to Site URL. The callback page
-    // disambiguates intent from Supabase profile + localStorage.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
-    if (error) setErrorMsg("Sign-in failed. Please try again.");
+    if (error) {
+      setStatus("error");
+      setErrorMsg("Sign-in failed. Please try again.");
+    }
   }
 
-  async function handleEmailSubmit(e: React.FormEvent) {
+  async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!supabase) {
+      setStatus("error");
       setErrorMsg("Sign-in is temporarily unavailable.");
       return;
     }
     const trimmed = email.trim().toLowerCase();
     if (!trimmed.includes("@")) {
+      setStatus("error");
       setErrorMsg("Please enter a valid email address.");
       return;
     }
-    setStatus("sending");
+    if (!password) {
+      setStatus("error");
+      setErrorMsg("Please enter your password.");
+      return;
+    }
+
+    setStatus("signing-in");
     setErrorMsg(null);
-    const { error } = await supabase.auth.signInWithOtp({
+
+    const { error } = await supabase.auth.signInWithPassword({
       email: trimmed,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      password,
+    });
+
+    if (error) {
+      setStatus("error");
+      setErrorMsg(error.message);
+      return;
+    }
+
+    // Session is established. Hand off to the callback page so the routing
+    // decision (profile lookup → /log vs /welcome vs /upgrade) stays in one place.
+    router.push("/auth/callback");
+  }
+
+  async function handleForgotPassword() {
+    if (!supabase) {
+      setStatus("error");
+      setErrorMsg("Reset is temporarily unavailable.");
+      return;
+    }
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed.includes("@")) {
+      setStatus("error");
+      setErrorMsg("Enter your email above first, then tap Forgot password.");
+      return;
+    }
+    setStatus("signing-in");
+    setErrorMsg(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: `${window.location.origin}/auth/reset`,
     });
     if (error) {
       setStatus("error");
       setErrorMsg(error.message);
       return;
     }
-    setStatus("sent");
+    setStatus("reset-sent");
   }
 
   return (
     <div className="mt-8">
-      {/* Hairline rule */}
       <div style={{ borderTop: "1px solid var(--border)" }} />
 
-      {/* Label */}
       <p
         className="text-sm text-center mt-5 mb-4"
         style={{ color: "var(--text-secondary)", fontFamily: "var(--font-body)" }}
@@ -69,7 +105,6 @@ export default function ReturningMemberSignIn() {
         Already a member?
       </p>
 
-      {/* Sign-in buttons */}
       <div className="flex flex-col gap-2">
         <button
           onClick={handleGoogle}
@@ -105,98 +140,106 @@ export default function ReturningMemberSignIn() {
           <span className="text-sm font-medium">Continue with Google</span>
         </button>
 
-        {mode === "idle" ? (
-          <button
-            onClick={() => setMode("email")}
-            className="flex items-center justify-center gap-3 tap-feedback"
+        <div className="flex items-center gap-3 my-1">
+          <div style={{ flex: 1, borderTop: "1px solid var(--border)" }} />
+          <span
             style={{
-              height: "48px",
-              borderRadius: "1rem",
+              color: "var(--text-secondary)",
+              fontFamily: "var(--font-body)",
+              textTransform: "uppercase",
+              letterSpacing: "0.15em",
+              fontSize: "10px",
+            }}
+          >
+            or
+          </span>
+          <div style={{ flex: 1, borderTop: "1px solid var(--border)" }} />
+        </div>
+
+        <form onSubmit={handleSignIn} className="flex flex-col gap-2">
+          <label htmlFor="signin-email" className="sr-only">
+            Email address
+          </label>
+          <input
+            id="signin-email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(ev) => setEmail(ev.target.value)}
+            placeholder="you@example.com"
+            disabled={status === "signing-in"}
+            style={{
+              height: "44px",
+              padding: "0 12px",
+              borderRadius: "0.625rem",
               border: "1px solid var(--border)",
               backgroundColor: "var(--bg-surface)",
               color: "var(--text-primary)",
               fontFamily: "var(--font-body)",
-              cursor: "pointer",
+              fontSize: "14px",
+              outline: "none",
             }}
-          >
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-              <rect
-                x="1.75"
-                y="3.75"
-                width="14.5"
-                height="10.5"
-                rx="1.25"
-                stroke="currentColor"
-                strokeWidth="1.4"
-              />
-              <path
-                d="M2 4.5 9 10l7-5.5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-sm font-medium">Continue with Email</span>
-          </button>
-        ) : (
-          <form
-            onSubmit={handleEmailSubmit}
-            className="flex flex-col gap-2"
+          />
+          <label htmlFor="signin-password" className="sr-only">
+            Password
+          </label>
+          <input
+            id="signin-password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(ev) => setPassword(ev.target.value)}
+            placeholder="Password"
+            disabled={status === "signing-in"}
             style={{
-              padding: "6px",
-              borderRadius: "1rem",
+              height: "44px",
+              padding: "0 12px",
+              borderRadius: "0.625rem",
               border: "1px solid var(--border)",
               backgroundColor: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-body)",
+              fontSize: "14px",
+              outline: "none",
+            }}
+          />
+          <button
+            type="submit"
+            disabled={status === "signing-in"}
+            style={{
+              height: "44px",
+              borderRadius: "0.625rem",
+              backgroundColor: "var(--accent)",
+              color: "#ffffff",
+              border: "none",
+              fontFamily: "var(--font-body)",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: status === "signing-in" ? "not-allowed" : "pointer",
             }}
           >
-            <label htmlFor="signin-email" className="sr-only">
-              Email address
-            </label>
-            <input
-              id="signin-email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(ev) => setEmail(ev.target.value)}
-              placeholder="you@example.com"
-              disabled={status === "sending" || status === "sent"}
-              style={{
-                height: "40px",
-                padding: "0 12px",
-                borderRadius: "0.625rem",
-                border: "none",
-                backgroundColor: "transparent",
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-body)",
-                fontSize: "14px",
-                outline: "none",
-              }}
-            />
-            <button
-              type="submit"
-              disabled={status === "sending" || status === "sent"}
-              style={{
-                height: "40px",
-                borderRadius: "0.625rem",
-                backgroundColor: "var(--accent)",
-                color: "#ffffff",
-                border: "none",
-                fontFamily: "var(--font-body)",
-                fontSize: "14px",
-                fontWeight: 500,
-                cursor: status === "sending" ? "not-allowed" : "pointer",
-              }}
-            >
-              {status === "sending"
-                ? "Sending magic link…"
-                : status === "sent"
-                  ? "Check your email"
-                  : "Send magic link"}
-            </button>
-          </form>
-        )}
+            {status === "signing-in" ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        <button
+          type="button"
+          onClick={handleForgotPassword}
+          className="text-xs text-center mt-1"
+          style={{
+            color: "var(--text-secondary)",
+            fontFamily: "var(--font-body)",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            textDecoration: "underline",
+            textUnderlineOffset: "2px",
+          }}
+        >
+          Forgot password?
+        </button>
       </div>
 
       {errorMsg && (
@@ -207,12 +250,12 @@ export default function ReturningMemberSignIn() {
           {errorMsg}
         </p>
       )}
-      {status === "sent" && (
+      {status === "reset-sent" && (
         <p
           className="text-xs text-center mt-3"
           style={{ color: "var(--text-secondary)", fontFamily: "var(--font-body)" }}
         >
-          We sent a link to {email}. Open it to sign in.
+          We sent a reset link to {email}. Open it to set a new password.
         </p>
       )}
     </div>
