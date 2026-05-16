@@ -41,11 +41,9 @@ export default function OnboardingPage() {
     <>
       <AppHeader showStreak={false} />
       <div
-        className="mx-auto"
+        className="mx-auto w-full max-w-[480px] md:max-w-[960px]"
         style={{
-          maxWidth: "480px",
           minHeight: "100dvh",
-          backgroundColor: "var(--bg-primary)",
         }}
       >
         {step === 1 && (
@@ -54,6 +52,7 @@ export default function OnboardingPage() {
               setConditions(selected);
               setStep(2);
             }}
+            onBack={() => router.push("/")}
           />
         )}
         {step === 2 && (

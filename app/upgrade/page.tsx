@@ -1,8 +1,10 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import AppHeader from "@/components/layout/AppHeader";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppState } from "@/app/providers";
+import { motion } from "framer-motion";
 
 type Plan = "annual" | "monthly" | "lifetime";
 
@@ -94,30 +96,34 @@ function UpgradeContent() {
         Sleuth AI, full timeline, doctor reports, and community insights.
       </p>
 
-      {/* ── Annual card (dominant) ────────────────────────────────── */}
-      <AnnualCard
-        onSelect={() => handleSelect("annual")}
-        submitting={submitting === "annual"}
-        disabled={submitting !== null}
-      />
+      <div className="flex flex-col md:flex-row items-stretch gap-3">
+        {/* ── Annual card (dominant) ────────────────────────────────── */}
+        <div className="flex-1 flex flex-col h-full">
+          <AnnualCard
+            onSelect={() => handleSelect("annual")}
+            submitting={submitting === "annual"}
+            disabled={submitting !== null}
+          />
+        </div>
 
-      <div style={{ height: 12 }} />
+        {/* ── Monthly card (recessive) ──────────────────────────────── */}
+        <div className="flex-1 flex flex-col h-full">
+          <MonthlyCard
+            onSelect={() => handleSelect("monthly")}
+            submitting={submitting === "monthly"}
+            disabled={submitting !== null}
+          />
+        </div>
 
-      {/* ── Monthly card (recessive) ──────────────────────────────── */}
-      <MonthlyCard
-        onSelect={() => handleSelect("monthly")}
-        submitting={submitting === "monthly"}
-        disabled={submitting !== null}
-      />
-
-      <div style={{ height: 12 }} />
-
-      {/* ── Lifetime card (tertiary, best value) ──────────────────── */}
-      <LifetimeCard
-        onSelect={() => handleSelect("lifetime")}
-        submitting={submitting === "lifetime"}
-        disabled={submitting !== null}
-      />
+        {/* ── Lifetime card (tertiary, best value) ──────────────────── */}
+        <div className="flex-1 flex flex-col h-full">
+          <LifetimeCard
+            onSelect={() => handleSelect("lifetime")}
+            submitting={submitting === "lifetime"}
+            disabled={submitting !== null}
+          />
+        </div>
+      </div>
 
       {/* Error */}
       {errorMsg && (
@@ -164,6 +170,7 @@ function AnnualCard({
 }) {
   return (
     <div
+      className="h-full flex flex-col"
       style={{
         position: "relative",
         padding: "6px",
@@ -173,6 +180,7 @@ function AnnualCard({
       }}
     >
       <div
+        className="flex-1 flex flex-col"
         style={{
           backgroundColor: "var(--accent)",
           borderRadius: "0.875rem",
@@ -235,12 +243,15 @@ function AnnualCard({
           14-day free trial included
         </p>
 
-        <button
+        <motion.button
           onClick={onSelect}
           disabled={disabled}
-          className="group active:scale-[0.98]"
+          whileHover={disabled ? {} : { scale: 1.02 }}
+          whileTap={disabled ? {} : { scale: 0.98 }}
+          className="group mt-auto"
           style={{
             width: "100%",
+            minHeight: "56px",
             padding: "14px 20px",
             borderRadius: "1.25rem",
             backgroundColor: "#ffffff",
@@ -253,7 +264,7 @@ function AnnualCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            transition: "transform 150ms cubic-bezier(0.16,1,0.3,1), opacity 150ms ease",
+            transition: "opacity 150ms ease",
             opacity: disabled && !submitting ? 0.5 : 1,
           }}
         >
@@ -283,7 +294,7 @@ function AnnualCard({
               />
             </svg>
           </span>
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -302,6 +313,7 @@ function MonthlyCard({
 }) {
   return (
     <div
+      className="h-full flex flex-col"
       style={{
         padding: "6px",
         borderRadius: "1.25rem",
@@ -310,11 +322,12 @@ function MonthlyCard({
       }}
     >
       <div
+        className="flex-1 flex flex-col"
         style={{
           backgroundColor: "var(--bg-surface)",
           boxShadow: "var(--bezel-inset-shadow)",
           borderRadius: "0.875rem",
-          padding: "18px 20px 16px",
+          padding: "20px 20px 18px",
         }}
       >
         <p
@@ -334,7 +347,7 @@ function MonthlyCard({
           <span
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "28px",
+              fontSize: "36px",
               fontWeight: 400,
               color: "var(--text-primary)",
               lineHeight: 1,
@@ -354,36 +367,52 @@ function MonthlyCard({
         </div>
         <p
           style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "12px",
+            color: "var(--text-secondary)",
+            margin: "0 0 14px",
+          }}
+        >
+          Cancel anytime
+        </p>
+        <p
+          style={{
             fontFamily: "var(--font-body)",
             fontSize: "13px",
             color: "var(--text-secondary)",
-            margin: "0 0 16px",
+            margin: "0 0 18px",
           }}
         >
-          7-day free trial
+          7-day free trial included
         </p>
 
-        <button
+        <motion.button
           onClick={onSelect}
           disabled={disabled}
-          className="active:scale-[0.98]"
+          whileHover={disabled ? {} : { scale: 1.02 }}
+          whileTap={disabled ? {} : { scale: 0.98 }}
+          className="mt-auto"
           style={{
             width: "100%",
-            padding: "12px 20px",
+            minHeight: "56px",
+            padding: "14px 20px",
             borderRadius: "1.25rem",
             backgroundColor: "transparent",
             color: "var(--text-primary)",
             border: "1px solid var(--border)",
             cursor: disabled ? "not-allowed" : "pointer",
             fontFamily: "var(--font-body)",
-            fontSize: "14px",
+            fontSize: "15px",
             fontWeight: 500,
-            transition: "transform 150ms cubic-bezier(0.16,1,0.3,1), opacity 150ms ease",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "opacity 150ms ease",
             opacity: disabled && !submitting ? 0.5 : 1,
           }}
         >
           {submitting ? "Starting checkout…" : "Try Monthly"}
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -402,6 +431,7 @@ function LifetimeCard({
 }) {
   return (
     <div
+      className="h-full flex flex-col"
       style={{
         position: "relative",
         padding: "6px",
@@ -436,11 +466,12 @@ function LifetimeCard({
       </span>
 
       <div
+        className="flex-1 flex flex-col"
         style={{
           backgroundColor: "var(--bg-surface)",
           boxShadow: "var(--bezel-inset-shadow)",
           borderRadius: "0.875rem",
-          padding: "18px 20px 16px",
+          padding: "20px 20px 18px",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -477,7 +508,7 @@ function LifetimeCard({
           <span
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "28px",
+              fontSize: "36px",
               fontWeight: 400,
               color: "var(--text-primary)",
               lineHeight: 1,
@@ -497,21 +528,34 @@ function LifetimeCard({
         </div>
         <p
           style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "12px",
+            color: "var(--text-secondary)",
+            margin: "0 0 14px",
+          }}
+        >
+          Yours forever
+        </p>
+        <p
+          style={{
             fontFamily: "var(--font-body)",
             fontSize: "13px",
             color: "var(--text-secondary)",
-            margin: "0 0 16px",
+            margin: "0 0 18px",
           }}
         >
           Pay once. Never expires.
         </p>
 
-        <button
+        <motion.button
           onClick={onSelect}
           disabled={disabled}
-          className="group active:scale-[0.98]"
+          whileHover={disabled ? {} : { scale: 1.02 }}
+          whileTap={disabled ? {} : { scale: 0.98 }}
+          className="group mt-auto"
           style={{
             width: "100%",
+            minHeight: "56px",
             padding: "14px 20px",
             borderRadius: "1.25rem",
             backgroundColor: "var(--accent)",
@@ -524,7 +568,7 @@ function LifetimeCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            transition: "transform 150ms cubic-bezier(0.16,1,0.3,1), opacity 150ms ease",
+            transition: "opacity 150ms ease",
             opacity: disabled && !submitting ? 0.5 : 1,
           }}
         >
@@ -554,7 +598,7 @@ function LifetimeCard({
               />
             </svg>
           </span>
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -562,8 +606,18 @@ function LifetimeCard({
 
 export default function UpgradePage() {
   return (
-    <Suspense>
-      <UpgradeContent />
-    </Suspense>
+    <>
+      <AppHeader showStreak={false} />
+      <div
+        className="mx-auto w-full max-w-[480px] md:max-w-[960px]"
+        style={{
+          minHeight: "100dvh",
+        }}
+      >
+        <Suspense>
+          <UpgradeContent />
+        </Suspense>
+      </div>
+    </>
   );
 }

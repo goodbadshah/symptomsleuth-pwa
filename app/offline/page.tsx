@@ -13,7 +13,6 @@ export default function OfflinePage() {
         padding: "0 20px",
         maxWidth: "480px",
         margin: "0 auto",
-        backgroundColor: "var(--bg-primary)",
         fontFamily: "var(--font-body)",
       }}
     >

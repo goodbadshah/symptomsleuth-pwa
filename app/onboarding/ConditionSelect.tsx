@@ -1,41 +1,48 @@
 "use client";
 
 import { useState } from "react";
+import FadeIn from "@/components/ui/FadeIn";
+import { motion } from "framer-motion";
 
 const CONDITIONS = [
-  "Migraine",
-  "IBS",
-  "Fibromyalgia",
-  "Chronic Pain",
   "Anxiety",
-  "Autoimmune",
-  "PCOS",
-  "Endometriosis",
-  "Hypertension",
-  "Obesity",
-  "Periodontal Disease",
-  "Depression",
   "Arthritis",
-  "Type 2 Diabetes",
-  "COPD",
   "Asthma",
-  "Heart Disease",
-  "Chronic Kidney Disease",
-  "Cancer",
-  "Dementia & Alzheimer's",
-  "Stroke",
-  "Osteoporosis",
   "Atrial Fibrillation",
-  "Liver Disease",
-  "Thyroid Disease",
+  "Autoimmune",
+  "COPD",
+  "Cancer",
+  "Chronic Kidney Disease",
+  "Chronic Lyme Disease",
+  "Chronic Pain",
+  "Dementia & Alzheimer's",
+  "Depression",
+  "Endometriosis",
+  "Fibromyalgia",
+  "Heart Disease",
+  "Hypertension",
   "IBD",
+  "IBS",
+  "Liver Disease",
+  "Long COVID",
+  "MCAS",
+  "Migraine",
+  "Obesity",
+  "Osteoporosis",
+  "PCOS",
+  "POTS",
+  "Periodontal Disease",
+  "Stroke",
+  "Thyroid Disease",
+  "Type 2 Diabetes",
 ];
 
 interface Props {
   onContinue: (conditions: string[]) => void;
+  onBack?: () => void;
 }
 
-export default function ConditionSelect({ onContinue }: Props) {
+export default function ConditionSelect({ onContinue, onBack }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [otherText, setOtherText] = useState("");
   const [otherActive, setOtherActive] = useState(false);
@@ -68,7 +75,20 @@ export default function ConditionSelect({ onContinue }: Props) {
   const hasSelection = selected.size > 0 || (otherActive && otherText.trim().length > 0);
 
   return (
-    <div className="flex flex-col min-h-[100dvh] px-5 pt-12 pb-8">
+    <div className="flex flex-col min-h-[100dvh] px-5 pt-12 pb-8 relative">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-10 right-5 flex items-center justify-center w-10 h-10 rounded-full tap-feedback"
+          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
+          aria-label="Back"
+        >
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+            <polyline points="10,3 5,8 10,13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         {/* Eyebrow pill - step indicator */}
@@ -99,15 +119,17 @@ export default function ConditionSelect({ onContinue }: Props) {
       </div>
 
       {/* Condition grid */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {CONDITIONS.map((condition) => {
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        {CONDITIONS.map((condition, index) => {
           const isSelected = selected.has(condition);
+          // Faster stagger (40ms), cap staggering delay per row roughly (modulo logic prevents huge delays on long scrolls)
+          const delay = (index % 15) * 40; 
           return (
-            <div key={condition}>
+            <FadeIn key={condition} delay={delay}>
               {/* Double-Bezel card - outer shell */}
               <button
                 onClick={() => toggle(condition)}
-                className="w-full tap-feedback"
+                className="w-full tap-feedback group relative"
                 style={{
                   padding: "6px",
                   borderRadius: "1.25rem",
@@ -122,20 +144,26 @@ export default function ConditionSelect({ onContinue }: Props) {
                 }}
                 aria-pressed={isSelected}
               >
+                {/* Glow effect on hover */}
+                <div 
+                  className="absolute inset-0 rounded-[1.25rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" 
+                  style={{ boxShadow: "var(--hover-glow)" }} 
+                />
+                
                 {/* Inner core */}
                 <div
-                  className="flex items-start text-left"
+                  className="flex items-center text-left w-full h-full"
                   style={{
                     padding: "10px 12px",
                     backgroundColor: isSelected ? "rgba(216,243,220,0.5)" : "var(--bg-surface)",
                     boxShadow: "var(--bezel-inset-shadow)",
                     borderRadius: "0.875rem",
-                    minHeight: "48px",
+                    minHeight: "56px",
                     transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
                   }}
                 >
                   <span
-                    className={`text-base font-medium leading-tight food-trigger-label${isSelected ? " food-trigger-label--selected" : ""}`}
+                    className={`text-[15px] font-medium leading-tight food-trigger-label${isSelected ? " food-trigger-label--selected" : ""}`}
                     style={{
                       fontFamily: "var(--font-body)",
                       transition: "color 200ms cubic-bezier(0.16,1,0.3,1)",
@@ -145,15 +173,15 @@ export default function ConditionSelect({ onContinue }: Props) {
                   </span>
                 </div>
               </button>
-            </div>
+            </FadeIn>
           );
         })}
 
         {/* Other card */}
-        <div>
+        <FadeIn delay={(CONDITIONS.length % 15) * 40}>
           <button
             onClick={toggleOther}
-            className="w-full tap-feedback"
+            className="w-full tap-feedback group relative"
             style={{
               padding: "6px",
               borderRadius: "1.25rem",
@@ -168,19 +196,25 @@ export default function ConditionSelect({ onContinue }: Props) {
             }}
             aria-pressed={otherActive}
           >
+            {/* Glow effect on hover */}
+            <div 
+              className="absolute inset-0 rounded-[1.25rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" 
+              style={{ boxShadow: "var(--hover-glow)" }} 
+            />
+            
             <div
-              className="flex items-start text-left"
+              className="flex items-center text-left w-full h-full"
               style={{
                 padding: "10px 12px",
                 backgroundColor: otherActive ? "rgba(216,243,220,0.5)" : "var(--bg-surface)",
                 boxShadow: "var(--bezel-inset-shadow)",
                 borderRadius: "0.875rem",
-                minHeight: "48px",
+                minHeight: "56px",
                 transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
               }}
             >
               <span
-                className={`text-base font-medium leading-tight food-trigger-label${otherActive ? " food-trigger-label--selected" : ""}`}
+                className={`text-[15px] font-medium leading-tight food-trigger-label${otherActive ? " food-trigger-label--selected" : ""}`}
                 style={{
                   fontFamily: "var(--font-body)",
                   transition: "color 200ms cubic-bezier(0.16,1,0.3,1)",
@@ -190,7 +224,7 @@ export default function ConditionSelect({ onContinue }: Props) {
               </span>
             </div>
           </button>
-        </div>
+        </FadeIn>
       </div>
 
       {/* Other text input */}
@@ -223,10 +257,12 @@ export default function ConditionSelect({ onContinue }: Props) {
       <div className="flex-1" />
 
       {/* Continue - Button-in-Button pattern */}
-      <button
+      <motion.button
         onClick={handleContinue}
         disabled={!hasSelection}
-        className="group w-full flex items-center justify-between px-5 tap-feedback"
+        whileHover={hasSelection ? { scale: 1.02 } : undefined}
+        whileTap={hasSelection ? { scale: 0.98 } : undefined}
+        className={`group w-full relative flex items-center justify-center px-5 tap-feedback ${hasSelection ? "shadow-[0_4px_14px_rgba(45,106,79,0.2)]" : ""}`}
         style={{
           height: "56px",
           borderRadius: "1.25rem",
@@ -235,26 +271,21 @@ export default function ConditionSelect({ onContinue }: Props) {
           cursor: hasSelection ? "pointer" : "not-allowed",
           fontFamily: "var(--font-body)",
           border: "none",
-          transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
+          transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
         }}
         aria-disabled={!hasSelection}
       >
         <span className="text-sm font-medium">Continue</span>
         {/* Trailing icon circle */}
         <span
-          className="w-7 h-7 rounded-full flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.12)",
-            transition: "transform 150ms cubic-bezier(0.16,1,0.3,1)",
-            flexShrink: 0,
-          }}
+          className="absolute right-5 w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px"
           aria-hidden="true"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
-      </button>
+      </motion.button>
     </div>
   );
 }

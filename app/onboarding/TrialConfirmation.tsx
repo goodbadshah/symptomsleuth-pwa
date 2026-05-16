@@ -1,6 +1,7 @@
 "use client";
 
 import { useInView, entryStyle } from "@/hooks/useInView";
+import { motion } from "framer-motion";
 
 interface Props {
   onContinue: () => void;
@@ -18,29 +19,17 @@ export default function TrialConfirmation({ onContinue, onBack }: Props) {
   const { ref, inView } = useInView();
 
   return (
-    <div className="flex flex-col min-h-[100dvh] px-5 pt-16 pb-10">
+    <div className="flex flex-col min-h-[100dvh] px-5 pt-16 pb-10 relative">
       {/* Back */}
       <button
         onClick={onBack}
-        className="self-start mb-10 flex items-center gap-1"
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: "var(--text-secondary)",
-        }}
+        className="absolute top-10 right-5 flex items-center justify-center w-10 h-10 rounded-full tap-feedback"
+        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
         aria-label="Back"
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <polyline
-            points="10,3 5,8 10,13"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+          <polyline points="10,3 5,8 10,13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span className="text-sm">Back</span>
       </button>
 
       {/* Heading */}
@@ -96,12 +85,14 @@ export default function TrialConfirmation({ onContinue, onBack }: Props) {
         ))}
       </ul>
 
-      <div className="flex-1" />
+      <div className="flex-1 md:flex-none md:mt-8" />
 
       {/* CTA */}
-      <button
+      <motion.button
         onClick={onContinue}
-        className="group w-full flex items-center justify-between px-5 tap-feedback"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="group w-full relative flex items-center justify-center px-5 shadow-[0_4px_14px_rgba(45,106,79,0.2)] tap-feedback"
         style={{
           height: "56px",
           borderRadius: "1.25rem",
@@ -110,16 +101,12 @@ export default function TrialConfirmation({ onContinue, onBack }: Props) {
           fontFamily: "var(--font-body)",
           border: "none",
           cursor: "pointer",
+          transition: "box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
         <span className="text-sm font-medium">Choose your plan</span>
         <span
-          className="w-7 h-7 rounded-full flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.12)",
-            transition: "transform 150ms cubic-bezier(0.16,1,0.3,1)",
-            flexShrink: 0,
-          }}
+          className="absolute right-5 w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px"
           aria-hidden="true"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -132,7 +119,7 @@ export default function TrialConfirmation({ onContinue, onBack }: Props) {
             />
           </svg>
         </span>
-      </button>
+      </motion.button>
 
       <p className="text-xs text-center mt-4" style={{ color: "var(--text-secondary)" }}>
         No charge today. Cancel anytime during your trial.

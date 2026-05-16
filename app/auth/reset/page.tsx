@@ -98,7 +98,6 @@ function ResetContent() {
       style={{
         maxWidth: "480px",
         minHeight: "100dvh",
-        backgroundColor: "var(--bg-primary)",
         padding: "64px 20px 40px",
       }}
     >

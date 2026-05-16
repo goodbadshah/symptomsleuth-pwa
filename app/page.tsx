@@ -1,187 +1,208 @@
 "use client";
 
 import Link from "next/link";
-import { useInView, entryStyle } from "@/hooks/useInView";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import AppHeader from "@/components/layout/AppHeader";
 import ReturningMemberSignIn from "@/components/auth/ReturningMemberSignIn";
+import { Activity, LineChart, Users, FileText } from "lucide-react";
 
 const VALUE_PROPS = [
   {
+    icon: Activity,
     label: "Quick daily log",
     detail: "Tap through your symptoms in seconds. Works offline.",
   },
   {
+    icon: LineChart,
     label: "Your patterns over time",
     detail: "Timeline chart shows severity trends and streak data.",
   },
   {
+    icon: Users,
     label: "Community intelligence",
-    detail:
-      "See how your patterns compare to thousands with the same condition. Anonymous. Opt-in.",
+    detail: "See how your patterns compare to thousands with the same condition.",
   },
   {
+    icon: FileText,
     label: "Doctor-ready reports",
     detail: "Generate a structured clinical summary for your next appointment.",
   },
 ];
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
+
 export default function LandingPage() {
-  const { ref: valueRef, inView: valueVisible } = useInView();
-  const { ref: privacyRef, inView: privacyVisible } = useInView();
-  const { ref: pricingRef, inView: pricingVisible } = useInView();
-
   return (
-    <>
+    <div className="min-h-[100dvh] flex flex-col relative w-full overflow-hidden">
       <AppHeader showStreak={false} />
-      <main
-        className="flex flex-col mx-auto px-5"
-      style={{
-        maxWidth: "480px",
-        backgroundColor: "var(--bg-primary)",
-        color: "var(--text-primary)",
-        fontFamily: "var(--font-body)",
-      }}
-    >
-      {/* ── Hero - always above fold ── */}
-      <section className="flex flex-col justify-center pt-10 pb-10">
-        <h1
-          className="leading-tight mb-4"
-          style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontSize: "clamp(1.4375rem, 7.25vw, 2.25rem)" }}
+      
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-12 md:py-24 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 relative z-10">
+        
+        {/* ── Left Column: Hero & CTAs ── */}
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20, duration: 0.8 }}
+          className="flex-1 max-w-xl w-full flex flex-col justify-center"
         >
-          See what your symptoms
-          <br />
-          are saying.
-        </h1>
-
-        <p className="text-base leading-relaxed mb-8" style={{ color: "var(--text-secondary)" }}>
-          Built for chronic conditions: Migraines, IBS, fibromyalgia, diabetes, PCOS, and more.
-        </p>
-
-        {/* CTA - Button-in-Button, always visible above fold */}
-        <Link
-          href="/onboarding"
-          className="group flex items-center justify-between px-5 tap-feedback"
-          style={{
-            height: "56px",
-            borderRadius: "1.25rem",
-            backgroundColor: "var(--accent)",
-            color: "#ffffff",
-            fontFamily: "var(--font-body)",
-            textDecoration: "none",
-          }}
-        >
-          <span className="text-base font-medium">Start free trial</span>
-          <span
-            className="w-7 h-7 rounded-full flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px"
-            style={{
-              backgroundColor: "rgba(0,0,0,0.12)",
-              transition: "transform 150ms cubic-bezier(0.16,1,0.3,1)",
-              flexShrink: 0,
-            }}
-            aria-hidden="true"
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
+            className="inline-flex w-fit items-center rounded-full px-3 py-1 mb-6 text-[11px] uppercase tracking-[0.2em] font-medium bg-[--accent-light] text-[--accent]"
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-        </Link>
+            A Modern Medical Journal
+          </motion.div>
 
-        <p
-          className="text-sm text-center mt-3"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          Optional sign-in. End-to-end encrypted. Only you can read your data.
-        </p>
+          <h1
+            className="leading-[1.1] mb-5 tracking-tight"
+            style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontSize: "clamp(2.25rem, 4vw, 3.5rem)", color: "var(--text-primary)" }}
+          >
+            See what your symptoms<br />are saying.
+          </h1>
 
-        {/* Returning-member sign-in - appended below the primary CTA */}
-        <ReturningMemberSignIn />
-      </section>
+          <p className="text-[1.05rem] leading-relaxed mb-8 max-w-md" style={{ fontFamily: "var(--font-body)", color: "var(--text-secondary)" }}>
+            Built for chronic conditions: Migraines, Long COVID, POTS, MCAS, Lyme, IBS, fibromyalgia, diabetes, PCOS, and more. 
+            Track daily, find correlations, and generate reports your doctor will actually read.
+          </p>
 
-      {/* ── Value props - scroll entry ── */}
-      <section
-        ref={valueRef as React.RefObject<HTMLElement>}
-        className="py-10"
-        style={{
-          ...entryStyle(valueVisible, 0),
-          borderTop: "1px solid var(--border)",
-        }}
-      >
-        <ul className="flex flex-col gap-7">
-          {VALUE_PROPS.map(({ label, detail }, index) => (
-            <li
-              key={label}
-              className="flex flex-col gap-1"
-              style={entryStyle(valueVisible, index)}
+          {/* Primary CTA */}
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Link
+              href="/onboarding"
+              className="group flex items-center justify-between px-6 py-4 w-full md:w-fit min-w-[280px] shadow-[0_4px_14px_rgba(45,106,79,0.2)]"
+              style={{
+                borderRadius: "1.5rem",
+                backgroundColor: "var(--accent)",
+                color: "#ffffff",
+                fontFamily: "var(--font-body)",
+                textDecoration: "none",
+              }}
             >
-              <span className="text-base font-medium" style={{ color: "var(--text-primary)" }}>
-                {label}
+              <span className="text-[1.05rem] font-medium tracking-wide">Start free trial</span>
+              <span
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300"
+                aria-hidden="true"
+              >
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                  <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </span>
-              <span className="text-base" style={{ color: "var(--text-secondary)", lineHeight: "1.5" }}>
-                {detail}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+            </Link>
+          </motion.div>
 
-      {/* ── Privacy - scroll entry ── */}
-      <section
-        ref={privacyRef as React.RefObject<HTMLElement>}
-        className="py-8"
-        style={{
-          ...entryStyle(privacyVisible, 0),
-          borderTop: "1px solid var(--border)",
-        }}
-      >
-        <p className="text-base leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          Your health data never leaves your device. We literally cannot see it,
-          even if we wanted to. Anonymous community data is opt-in - symptom
-          severity by week only, never your identity or notes.
-        </p>
-      </section>
+          <div className="mt-8 pt-5 border-t w-full max-w-sm flex flex-col items-center mx-auto lg:mx-0" style={{ borderColor: "var(--border)" }}>
+            <h3 className="text-[11px] uppercase tracking-[0.15em] mb-3 font-medium text-center" style={{ color: "var(--text-secondary)" }}>Already a member?</h3>
+            <div className="w-full flex justify-center">
+              <ReturningMemberSignIn />
+            </div>
+          </div>
+        </motion.div>
 
-      {/* ── Pricing - scroll entry ── */}
-      <section
-        ref={pricingRef as React.RefObject<HTMLElement>}
-        className="py-8 mb-8"
-        style={{
-          ...entryStyle(pricingVisible, 0),
-          borderTop: "1px solid var(--border)",
-        }}
-      >
-        <Link
-          href="/onboarding"
-          className="group flex items-center justify-between px-5 tap-feedback mb-6"
-          style={{
-            height: "56px",
-            borderRadius: "1.25rem",
-            backgroundColor: "var(--accent)",
-            color: "#ffffff",
-            fontFamily: "var(--font-body)",
-            textDecoration: "none",
-          }}
+        {/* ── Right Column: Value Props Glass Panel ── */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="flex-1 w-full max-w-lg relative"
         >
-          <span className="text-base font-medium">Start free trial</span>
-          <span
-            className="w-7 h-7 rounded-full flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px"
-            style={{
-              backgroundColor: "rgba(0,0,0,0.12)",
-              transition: "transform 150ms cubic-bezier(0.16,1,0.3,1)",
-              flexShrink: 0,
-            }}
-            aria-hidden="true"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-        </Link>
+          {/* Decorative blur blob behind the glass panel */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[--accent-light] rounded-full blur-[100px] opacity-20 -z-10 pointer-events-none" />
 
-        <p className="text-base" style={{ color: "var(--text-secondary)" }}>
-          14-day free trial on annual ($39.99/yr), or $9.99/month. Cancel anytime.
-        </p>
-      </section>
+          {/* Glassmorphic Panel */}
+          <div 
+            className="p-6 md:p-8 rounded-[2rem] border shadow-xl relative overflow-hidden"
+            style={{ 
+              backgroundColor: "var(--bezel-outer-bg)",
+              borderColor: "var(--bezel-ring)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)"
+            }}
+          >
+            <ul className="flex flex-col gap-6">
+              {VALUE_PROPS.map(({ icon: Icon, label, detail }, index) => (
+                <motion.li
+                  variants={itemVariants}
+                  key={label}
+                  className="flex items-start gap-4 p-3 -m-3 rounded-2xl group cursor-default"
+                  whileHover={{ scale: 1.02, backgroundColor: "var(--bg-surface)" }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                >
+                  <div className="mt-1 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border group-hover:border-[--accent] group-hover:bg-[--accent-light] transition-colors duration-300" style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--bezel-inset-shadow)" }}>
+                     <Icon size={18} className="text-[--accent] group-hover:scale-110 transition-transform duration-300" />
+                  </div>
+                  <div className="flex flex-col gap-[2px] pt-0.5">
+                    <span className="text-[1rem] font-semibold tracking-tight leading-snug group-hover:text-[--accent] transition-colors duration-300" style={{ color: "var(--text-primary)" }}>
+                      {label}
+                    </span>
+                    <span className="text-[0.9rem] leading-relaxed font-medium" style={{ color: "var(--text-secondary)" }}>
+                      {detail}
+                    </span>
+                  </div>
+                </motion.li>
+              ))}
+            </ul>
+
+            <motion.div 
+               variants={itemVariants}
+               className="mt-6 pt-6 border-t"
+               style={{ borderColor: "var(--border)" }}
+            >
+              <div className="flex items-start gap-4 p-4 rounded-[1.25rem] border" style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border)", boxShadow: "var(--shadow)" }}>
+                 <div className="w-8 h-8 rounded-full bg-[--accent-light] flex items-center justify-center shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                 </div>
+                 <p className="text-[13px] font-medium leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                   <strong className="mr-1" style={{ color: "var(--text-primary)" }}>Privacy guaranteed.</strong> 
+                   Your health data never leaves your device. We literally cannot see it, even if we wanted to.
+                 </p>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Mobile CTA (only visible on mobile layout below the glass panel) */}
+          <motion.div variants={itemVariants} className="mt-8 flex justify-center lg:hidden w-full">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Link
+                href="/onboarding"
+                className="group flex items-center justify-between px-6 py-4 w-full shadow-[0_4px_14px_rgba(45,106,79,0.2)]"
+                style={{
+                  borderRadius: "1.5rem",
+                  backgroundColor: "var(--accent)",
+                  color: "#ffffff",
+                  fontFamily: "var(--font-body)",
+                  textDecoration: "none",
+                }}
+              >
+                <span className="text-[1.05rem] font-medium tracking-wide">Start free trial</span>
+                <span
+                  className="w-8 h-8 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300"
+                  aria-hidden="true"
+                >
+                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                    <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              </Link>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </main>
-    </>
+    </div>
   );
 }

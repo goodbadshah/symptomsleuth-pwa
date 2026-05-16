@@ -3,6 +3,7 @@ import { Fraunces, DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "./providers";
 import ServiceWorkerRegister from "@/components/ui/ServiceWorkerRegister";
+import MurmurationBackground from "@/components/ui/MurmurationBackground";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -38,7 +39,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2D6A4F",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#2D6A4F" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1b18" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -64,8 +68,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="SymptomSleuth" />
       </head>
       <body className="antialiased">
+        <MurmurationBackground />
         <ServiceWorkerRegister />
-        <AppProvider>{children}</AppProvider>
+        <div className="relative z-10 flex flex-col min-h-screen">
+          <AppProvider>{children}</AppProvider>
+        </div>
       </body>
     </html>
   );

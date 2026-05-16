@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   GlyphNone,
   GlyphMild,
@@ -29,6 +30,7 @@ interface ChipDef {
   label: string;
   value: number;
   selectedBg: string;
+  defaultBg: string;
   selectedBorder: string;
   selectedText: string;
 }
@@ -37,44 +39,59 @@ const SEVERITY_CHIPS: ChipDef[] = [
   {
     label: "None",
     value: 0,
-    selectedBg: "rgba(209,209,206,0.25)",
+    selectedBg: "rgba(209,209,206,0.5)",
+    defaultBg: "rgba(209,209,206,0.2)",
     selectedBorder: "#D1D1CE",
     selectedText: "var(--chip-text-none)",
   },
   {
     label: "Mild",
     value: 1,
-    selectedBg: "rgba(197,223,184,0.25)",
+    selectedBg: "rgba(197,223,184,0.5)",
+    defaultBg: "rgba(197,223,184,0.2)",
     selectedBorder: "#C5DFB8",
     selectedText: "var(--chip-text-mild)",
   },
   {
     label: "Medium",
     value: 2,
-    selectedBg: "rgba(168,204,151,0.25)",
+    selectedBg: "rgba(168,204,151,0.5)",
+    defaultBg: "rgba(168,204,151,0.2)",
     selectedBorder: "#A8CC97",
     selectedText: "var(--chip-text-moderate)",
   },
   {
     label: "Severe",
     value: 3,
-    selectedBg: "rgba(244,201,93,0.25)",
+    selectedBg: "rgba(244,201,93,0.5)",
+    defaultBg: "rgba(244,201,93,0.2)",
     selectedBorder: "#F4C95D",
     selectedText: "var(--chip-text-severe)",
   },
   {
     label: "Extreme",
     value: 4,
-    selectedBg: "rgba(232,130,58,0.25)",
+    selectedBg: "rgba(232,130,58,0.5)",
+    defaultBg: "rgba(232,130,58,0.2)",
     selectedBorder: "#E8823A",
     selectedText: "var(--chip-text-extreme)",
   },
 ];
 
 const CONTEXT_SELECTED = {
-  bg: "rgba(74,74,74,0.25)",
+  bg: "rgba(74,74,74,0.4)",
+  defaultBg: "rgba(74,74,74,0.15)",
   border: "#4A4A4A",
   text: "var(--chip-text-context)",
+};
+
+// Map scale to box shadow glow colors
+const GLOW_COLORS = {
+  0: "rgba(209,209,206,0)",
+  1: "rgba(197,223,184,0.4)",
+  2: "rgba(168,204,151,0.6)",
+  3: "rgba(244,201,93,0.8)",
+  4: "rgba(232,130,58,0.9)",
 };
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -128,6 +145,7 @@ export default function SeverityChipSelector({
               ? CONTEXT_SELECTED
               : {
                   bg: chip.selectedBg,
+                  defaultBg: chip.defaultBg,
                   border: chip.selectedBorder,
                   text: chip.selectedText,
                 };
@@ -138,25 +156,32 @@ export default function SeverityChipSelector({
             ? `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}`
             : "0 0 0 1px rgba(0,0,0,0.04)";
 
+          const glowColor = scale === "severity" 
+            ? GLOW_COLORS[chip.value as keyof typeof GLOW_COLORS] 
+            : "rgba(74,74,74,0.4)";
+
           return (
-            <button
+            <motion.button
               key={chip.value}
               type="button"
               role="radio"
               aria-checked={selected}
               aria-label={chip.label}
               onClick={() => handleChipPress(chip.value)}
-              onPointerDown={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(0.5px)";
+              initial="rest"
+              whileHover="hover"
+              whileTap="tap"
+              animate={selected ? "selected" : "rest"}
+              variants={{
+                rest: { scale: 1, boxShadow: "0 0 0 1px rgba(0,0,0,0.04)" },
+                hover: { scale: 1.02, boxShadow: selected ? `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}` : "0 0 0 1px rgba(0,0,0,0.04)" },
+                tap: { scale: 0.95 },
+                selected: { scale: 1, boxShadow: `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}` }
               }}
-              onPointerUp={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(0)";
-              }}
-              onPointerLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform =
-                  "translateY(0)";
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 25,
               }}
               style={{
                 // Outer shell
@@ -170,21 +195,18 @@ export default function SeverityChipSelector({
                 cursor: "pointer",
                 WebkitTapHighlightColor: "transparent",
                 backgroundColor: "transparent",
-                boxShadow: outerBoxShadow,
-                transition: [
-                  "box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
-                  "transform 150ms cubic-bezier(0.16,1,0.3,1)",
-                ].join(", "),
+                position: "relative",
               }}
             >
               {/* Inner core - double-bezel architecture */}
-              <div
+              <motion.div
+                animate={{
+                  backgroundColor: selected ? sc.bg : sc.defaultBg,
+                  color: selected ? sc.text : "var(--text-secondary)",
+                }}
                 style={{
                   height: "100%",
                   borderRadius: "6px",
-                  backgroundColor: selected
-                    ? sc.bg
-                    : "var(--bg-surface)",
                   boxShadow: selected
                     ? `var(--bezel-inset-shadow), inset 0 1px 2px rgba(0,0,0,0.06)`
                     : "var(--bezel-inset-shadow)",
@@ -193,28 +215,46 @@ export default function SeverityChipSelector({
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "4px",
-                  color: selected ? sc.text : "var(--text-secondary)",
-                  transition: [
-                    "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
-                    "color 200ms cubic-bezier(0.16,1,0.3,1)",
-                    "box-shadow 150ms cubic-bezier(0.16,1,0.3,1)",
-                  ].join(", "),
+                  position: "relative",
+                  overflow: "hidden",
                 }}
               >
-                <GlyphComp size={12} />
-                <span
-                  style={{
-                    fontSize: "12px",
-                    fontFamily: "var(--font-body)",
-                    fontWeight: selected ? 600 : 500,
-                    lineHeight: 1.1,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {chip.label}
-                </span>
-              </div>
-            </button>
+                {/* Animated Glow Layer strictly inside the chip for center pulse */}
+                <AnimatePresence>
+                  {(scale === "severity" && chip.value > 0) && (
+                    <motion.div
+                      variants={{
+                        rest: { opacity: 0, scale: 0.9 },
+                        hover: { opacity: [0.4, 0.7, 0.4], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } },
+                        selected: { opacity: [0.5, 0.9, 0.5], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } }
+                      }}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: `radial-gradient(circle at center, ${GLOW_COLORS[chip.value as keyof typeof GLOW_COLORS]}, transparent 70%)`,
+                        zIndex: 0,
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
+
+                <div className="relative z-10 flex flex-col items-center gap-1">
+                  <GlyphComp size={12} />
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontFamily: "var(--font-body)",
+                      fontWeight: selected ? 600 : 500,
+                      lineHeight: 1.1,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {chip.label}
+                  </span>
+                </div>
+              </motion.div>
+            </motion.button>
           );
         })}
       </div>

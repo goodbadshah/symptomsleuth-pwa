@@ -146,7 +146,6 @@ export default function InstallPage() {
         style={{
           maxWidth: "480px",
           minHeight: "100dvh",
-          backgroundColor: "var(--bg-primary)",
         }}
       >
         <div className="flex flex-col min-h-[100dvh] px-5 pt-12 pb-10">

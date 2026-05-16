@@ -19,7 +19,7 @@ export default function AppHeader({ showStreak = true }: { showStreak?: boolean 
     <header
       style={{
         height: "72px",
-        backgroundColor: "var(--accent)",
+        backgroundColor: "var(--header-bg)",
         borderBottom: "1px solid rgba(0, 0, 0, 0.15)",
         flexShrink: 0,
         display: "flex",

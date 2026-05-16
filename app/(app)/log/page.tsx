@@ -248,7 +248,7 @@ export default function LogPage() {
   }, [symptoms, entries, context, note, today, dispatch, communityOptIn]);
 
   return (
-    <div style={{ minHeight: "100dvh", backgroundColor: "var(--bg-primary)", paddingBottom: "96px" }}>
+    <div style={{ minHeight: "100dvh", paddingBottom: "96px" }}>
       {/* Hero date block */}
       <div style={{ padding: "28px 20px 20px", borderBottom: "1px solid var(--border)" }}>
         <h1

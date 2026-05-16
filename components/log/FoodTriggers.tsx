@@ -150,7 +150,7 @@ export default function FoodTriggers({ value, onChange }: Props) {
                     <button
                       key={trigger}
                       onClick={() => toggle(trigger)}
-                      className="w-full tap-feedback"
+                      className="w-full tap-feedback group relative"
                       style={{
                         padding: "6px",
                         borderRadius: "1.25rem",
@@ -161,20 +161,21 @@ export default function FoodTriggers({ value, onChange }: Props) {
                           ? "rgba(216,243,220,0.3)"
                           : "var(--bezel-outer-bg)",
                         transition:
-                          "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1)",
+                          "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1), transform 150ms",
                         cursor: "pointer",
                         border: "none",
+                        overflow: "hidden", // ensures the pulse doesn't break out awkwardly if needed, but actually we might want it visible
                       }}
                       aria-pressed={isSelected}
                     >
                       {/* Inner core */}
                       <div
-                        className="flex items-start text-left"
+                        className="flex items-start text-left relative overflow-hidden"
                         style={{
                           padding: "10px 12px",
                           backgroundColor: isSelected
-                            ? "rgba(216,243,220,0.5)"
-                            : "var(--bg-surface)",
+                          ? "rgba(216,243,220,0.6)"
+                          : "rgba(216,243,220,0.25)",
                           boxShadow: "var(--bezel-inset-shadow)",
                           borderRadius: "0.875rem",
                           minHeight: "44px",
@@ -182,8 +183,19 @@ export default function FoodTriggers({ value, onChange }: Props) {
                             "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
                         }}
                       >
+                        {/* Pulse Glow Layer inside the core */}
+                        <div 
+                          className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
+                            isSelected ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover:opacity-100 group-hover:animate-pulse'
+                          }`}
+                          style={{
+                            background: 'radial-gradient(circle at center, rgba(45,106,79,0.3), transparent 70%)',
+                            zIndex: 0,
+                          }}
+                        />
+                        
                         <span
-                          className={`text-sm font-medium leading-tight food-trigger-label${isSelected ? " food-trigger-label--selected" : ""}`}
+                          className={`text-sm font-medium leading-tight relative z-10 food-trigger-label${isSelected ? " food-trigger-label--selected" : ""}`}
                           style={{
                             fontFamily: "var(--font-body)",
                             transition:

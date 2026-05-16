@@ -26,9 +26,15 @@ SymptomSleuth is a PWA that helps people with chronic conditions (migraine, IBS,
 
 **Purpose:** This interface helps people with chronic illness log daily symptoms in under 10 seconds, see how their patterns compare to others with the same condition, and generate structured reports for their doctors. The users are often in pain, fatigued, or brain-fogged when they open the app. Every design decision must prioritize speed, clarity, and calm.
 
-**Tone: Editorial Stationery.** SymptomSleuth reads as a beautifully typeset personal medical journal - the Moleskine you actually fill out, not the one on your nightstand. Authored, not templated. The reference points are editorial layout discipline (hierarchical typography, generous margins, marginalia, chapter markers on hairline rules) crossed with Japanese stationery materiality (warm paper ground, tactile surfaces, physical press affordance, restrained craft). This is NOT brutalist (too harsh), NOT playful (too energetic), NOT luxury (too precious), NOT consumer wellness (too generic). It is **authored warmth** - typography carries the voice, materiality carries the feel, color stays quiet except where severity demands it.
+**Tone: Modern Interactive Journal.** SymptomSleuth reads as a fluid, premium, tech-forward medical journal. The reference points are editorial layout discipline (hierarchical typography, generous margins) crossed with dynamic, living interfaces (fluid spring mechanics, ambient murmuration particle backgrounds, glassmorphic panels). It is **authored warmth with premium dynamism** - typography carries the voice, interactive depth carries the feel, and ambient motion responds to the user's data.
 
-**Constraints:** Mobile-first PWA at 480px max-width. Must work offline. Must be usable one-handed while lying down. All tap targets 48px minimum. Performance-critical on older phones. No heavy animation libraries - CSS transitions only. Motion is functional, not decorative. Every transition must serve a state change.
+**Constraints & Layout:** 
+- Mobile-first approach transitioning to a **Responsive Split-View Dashboard** on desktop (>768px). 
+  - Mobile: fluid max-width, bottom navigation, fluid spring bottom-sheets.
+  - Desktop: 2-column layout (Sticky Context Sidebar on the left, fluid Masonry Grid or centered content on the right).
+- All tap targets 48px minimum.
+- Use `framer-motion` for tactile spring physics and layout animations.
+- Use `react-tsparticles` for the ambient murmuration background effect.
 
 **Differentiation - the one thing someone should remember:** This app feels like it was designed by someone who *has* a chronic condition, not by someone who read a brief about chronic conditions. It's quiet, respectful of bad days, and never gamified or falsely cheerful. The typography is the voice; the paper warmth is the feel; the restraint IS the design. It reads as an authored journal a thoughtful adult keeps, for themselves and for their doctor. The community intelligence layer shows you that you're not alone - without ever being a social network.
 
@@ -53,11 +59,15 @@ Apply this to:
 
 **Color & Theme:** Almost monochromatic. Warm off-white (#FAFAF8) base, warm grays for text, single sage green accent (#2D6A4F). The ONLY polychromatic element is the severity scale (green → yellow → orange → red). This constraint is intentional: by keeping everything else quiet, the severity colors become the most meaningful visual element on screen.
 
-**Motion:** Minimal and medicinal. No springs, no bounces, no overshoots, no linear easing. Motion should feel like a slow exhale, not a heartbeat. All transitions use custom cubic-bezier curves - never generic `ease-out` or `ease-in-out`. **Never animate `top`, `left`, `width`, or `height` - animate exclusively via `transform` and `opacity`.**
+**Motion:** Fluid, tactile, and highly responsive. Use `framer-motion` for spring physics. Buttons and severity chips should have satisfying "squish" physics (`scale` interactions). Context menus and modals use swipeable spring bottom-sheets. Charts and elements should sweep into view using staggered spring animations. **Never animate `top`, `left`, `width`, or `height` via CSS - use Framer Motion layout animations or exclusively animate `transform` and `opacity`.**
 
-**Spatial Composition:** Symmetrical and predictable. No asymmetry, no overlap, no diagonal flow, no grid-breaking. Users with chronic conditions need spatial predictability - they should always know where things are without scanning. Generous negative space everywhere. The layout should feel airy, not dense.
+**Spatial Composition:** Responsive and adaptive. Desktop utilizes a two-column sidebar/main stage layout with masonry-like grids for condition viewing. Mobile maintains a layered, scrollable feed. Generous negative space everywhere. 
 
-**Backgrounds & Visual Details:** Warm off-white base (`--bg-primary`) with a near-invisible paper grain applied ONLY to the app shell background - a tiled SVG noise overlay at `--paper-noise-opacity` (0.03), warm-tinted. This kills the flat screen-design feel without crossing into skeuomorphism. Never apply noise to interactive surfaces: cards, chips, buttons, inputs, modals, or text containers stay flat. No gradient meshes, no layered transparencies. The only depth cue on interactive surfaces is the double-bezel inset highlight pattern (see Premium Craft Patterns) and a single-level subtle warm shadow (`0 1px 3px rgba(26,26,26,0.06)`) used sparingly. Atmosphere comes from typography, whitespace, and the paper ground - not visual effects.
+**Backgrounds & Visual Details:** Warm off-white base (`--bg-primary`) enhanced with a **Murmuration Particle Background** using `tsparticles`. 
+- On desktop, particles disperse smoothly around the cursor. 
+- On mobile, they drift naturally and respond slightly to scroll/gyroscope.
+- Panels, nav bars, and major containers should utilize **Glassmorphism** (`backdrop-blur-md` + translucent overlays) stacked over the murmuration background to create premium, macOS-like depth.
+- **Severity Chips:** Living gradients. Selected states feature a breathing/pulsing glow with subtle colored ambient drop-shadows matching the severity level (1=mild green pulse, 4=intense red glow).
 
 ### Grouping Patterns (in order of preference)
 
@@ -113,9 +123,9 @@ UI text must be minimal. Claude Code will always err toward more words - resist 
 
 ### Design Anti-Patterns (NEVER do these)
 
-- No gradient backgrounds or gradient buttons
+- No basic/flat color buttons if a dynamic state makes sense (use glowing states for selected severity)
 - No rounded-everything pill shapes (selective use of border-radius, not universal)
-- No bouncy/playful animations - motion is calm and functional
+- No jerky/linear animations - motion must use physics-based fluid springs (`framer-motion`)
 - No emoji as UI elements - use Phosphor Icons (@phosphor-icons/react) or clean inline SVGs
 - No emoticon faces (😊 😐 😖) anywhere - severity is expressed via the Severity Glyph System (see Frontend Aesthetics), never via faces. Faces read as pediatric pain-scale posters and undermine the "refined medical tool for adults" positioning.
 - No "wellness app" pastel palette

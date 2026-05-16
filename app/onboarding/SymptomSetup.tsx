@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { buildSuggestedSymptoms } from "@/utils/symptoms";
 import type { Symptom } from "@/app/providers";
 import { useInView, entryStyle } from "@/hooks/useInView";
+import { motion } from "framer-motion";
 
 interface Props {
   conditions: string[];
@@ -59,7 +60,18 @@ export default function SymptomSetup({ conditions, onContinue, onBack }: Props) 
   const enabledCount = symptoms.filter((s) => s.enabled).length;
 
   return (
-    <div className="flex flex-col min-h-[100dvh] px-5 pt-12 pb-8">
+    <div className="flex flex-col min-h-[100dvh] px-5 pt-12 pb-8 relative">
+      <button
+        onClick={onBack}
+        className="absolute top-10 right-5 flex items-center justify-center w-10 h-10 rounded-full tap-feedback"
+        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}
+        aria-label="Back"
+      >
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+          <polyline points="10,3 5,8 10,13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
       {/* Header */}
       <div className="mb-8">
         {/* Eyebrow pill */}
@@ -96,8 +108,9 @@ export default function SymptomSetup({ conditions, onContinue, onBack }: Props) 
         className="flex-1 overflow-y-auto -mx-5"
         style={{ borderTop: "1px solid var(--border)" }}
       >
-        {symptoms.map((symptom, index) => (
-          <div key={symptom.id} style={entryStyle(listVisible, index)}>
+        <div className="grid grid-cols-1 md:grid-cols-4">
+          {symptoms.map((symptom, index) => (
+          <div key={symptom.id} className="md:border-r border-[var(--border)] md:even:border-r-0" style={entryStyle(listVisible, index)}>
             <button
               onClick={() => toggleEnabled(symptom.id)}
               className="w-full flex items-center gap-3 px-5 py-4 text-left tap-feedback"
@@ -157,7 +170,7 @@ export default function SymptomSetup({ conditions, onContinue, onBack }: Props) 
 
         {/* Add custom symptom row */}
         <div
-          className="flex items-center gap-3 px-5 py-4"
+          className="flex items-center gap-3 px-5 py-4 md:border-r border-[var(--border)] md:even:border-r-0"
           style={{ borderBottom: "1px solid var(--border)", minHeight: "56px" }}
         >
           <input
@@ -183,15 +196,18 @@ export default function SymptomSetup({ conditions, onContinue, onBack }: Props) 
             </button>
           )}
         </div>
+        </div>
       </div>
 
       {/* Footer */}
       <div className="pt-5 flex flex-col gap-3">
         {/* Continue - Button-in-Button */}
-        <button
+        <motion.button
           onClick={handleContinue}
           disabled={enabledCount === 0}
-          className="group w-full flex items-center justify-between px-5 tap-feedback"
+          whileHover={enabledCount > 0 ? { scale: 1.02 } : undefined}
+          whileTap={enabledCount > 0 ? { scale: 0.98 } : undefined}
+          className={`group w-full relative flex items-center justify-center px-5 tap-feedback ${enabledCount > 0 ? "shadow-[0_4px_14px_rgba(45,106,79,0.2)]" : ""}`}
           style={{
             height: "56px",
             borderRadius: "1.25rem",
@@ -200,34 +216,21 @@ export default function SymptomSetup({ conditions, onContinue, onBack }: Props) 
             cursor: enabledCount > 0 ? "pointer" : "not-allowed",
             fontFamily: "var(--font-body)",
             border: "none",
-            transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
+            transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
           }}
         >
           <span className="text-sm font-medium">
             Continue{enabledCount > 0 ? ` with ${enabledCount}` : ""}
           </span>
           <span
-            className="w-7 h-7 rounded-full flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px"
-            style={{
-              backgroundColor: "rgba(0,0,0,0.12)",
-              transition: "transform 150ms cubic-bezier(0.16,1,0.3,1)",
-              flexShrink: 0,
-            }}
+            className="absolute right-5 w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px"
             aria-hidden="true"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-        </button>
-
-        <button
-          onClick={onBack}
-          className="w-full h-10 text-sm tap-feedback"
-          style={{ color: "var(--text-secondary)", fontFamily: "var(--font-body)" }}
-        >
-          ← Back
-        </button>
+        </motion.button>
       </div>
     </div>
   );

@@ -154,6 +154,11 @@ When analyzing symptom patterns:
 - Use "your data shows" language, not "you have" language
 - Include specific numbers when relevant ("8 out of 12 logged days")
 - End every response with: "This is pattern observation from your logged data, not medical advice."
+
+# UI Presentation Guidelines (AI Sleuth)
+
+- The AI chat interface should embrace dynamic elements: glowing "thinking" states instead of static loading bars.
+- When AI responses mention specific severities, inline severity glyphs should render with their corresponding ambient glow logic.
 ```
 
 ### Condition-Specific Prompts

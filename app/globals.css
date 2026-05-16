@@ -2,7 +2,7 @@
 
 :root {
   /* Background */
-  --bg-primary: #fafaf8;
+  --bg-primary: #F7F6EF;
   --bg-surface: #ffffff;
 
   /* Text */
@@ -11,7 +11,9 @@
 
   /* Accent */
   --accent: #2d6a4f;
+  --header-bg: #2d6a4f;
   --accent-light: #d8f3dc;
+  --hover-glow: 0 0 20px rgba(45, 106, 79, 0.15);
 
   /* Severity scale - warmer palette (Editorial Stationery update) */
   --severity-0-fill: transparent;
@@ -98,7 +100,9 @@
   --text-primary: #eeeae4;
   --text-secondary: #8f8c84;
   --accent: #2d6a4f;
+  --header-bg: #1c1b18;
   --accent-light: #1a3828;
+  --hover-glow: 0 0 20px rgba(216, 243, 220, 0.1);
   --border: #2e2c28;
   --premium-locked: #1a1917;
   --community: #5fafc4;
@@ -130,7 +134,9 @@
     --text-primary: #eeeae4;
     --text-secondary: #8f8c84;
     --accent: #2d6a4f;
+    --header-bg: #1c1b18;
     --accent-light: #1a3828;
+    --hover-glow: 0 0 20px rgba(216, 243, 220, 0.1);
     --border: #2e2c28;
     --premium-locked: #1a1917;
     --community: #5fafc4;
@@ -181,6 +187,22 @@ body {
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) .food-trigger-label--selected {
     color: var(--bg-primary);
+  }
+}
+
+/* Canvas blend modes */
+.murmuration-canvas {
+  mix-blend-mode: normal;
+  opacity: 0.9;
+}
+[data-theme="dark"] .murmuration-canvas {
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .murmuration-canvas {
+    mix-blend-mode: multiply;
+    opacity: 0.6;
   }
 }
 

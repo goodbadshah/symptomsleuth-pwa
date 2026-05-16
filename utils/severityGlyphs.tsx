@@ -89,45 +89,27 @@ export function GlyphModerate({ size = 12, ...rest }: GlyphProps) {
   );
 }
 
-/* 4 - Severe: filled 7px circle with a thin 1px outer ring */
+/* 4 - Severe: four dots in a square */
 export function GlyphSevere({ size = 12, ...rest }: GlyphProps) {
   return (
     <svg {...baseProps(size)} {...rest}>
-      <circle cx="8" cy="8" r="3.5" fill="currentColor" />
-      <circle
-        cx="8"
-        cy="8"
-        r="5"
-        stroke="currentColor"
-        strokeWidth="1"
-        fill="none"
-      />
+      <circle cx="5.5" cy="5.5" r="1.25" fill="currentColor" />
+      <circle cx="10.5" cy="5.5" r="1.25" fill="currentColor" />
+      <circle cx="5.5" cy="10.5" r="1.25" fill="currentColor" />
+      <circle cx="10.5" cy="10.5" r="1.25" fill="currentColor" />
     </svg>
   );
 }
 
-/* 5 - Extreme: severe glyph + second concentric outer ring */
+/* 5 - Extreme: five dots (quincunx) */
 export function GlyphExtreme({ size = 12, ...rest }: GlyphProps) {
   return (
     <svg {...baseProps(size)} {...rest}>
-      <circle cx="8" cy="8" r="3.5" fill="currentColor" />
-      <circle
-        cx="8"
-        cy="8"
-        r="5"
-        stroke="currentColor"
-        strokeWidth="1"
-        fill="none"
-      />
-      <circle
-        cx="8"
-        cy="8"
-        r="6.5"
-        stroke="currentColor"
-        strokeWidth="0.75"
-        fill="none"
-        opacity="0.6"
-      />
+      <circle cx="5.5" cy="5.5" r="1.25" fill="currentColor" />
+      <circle cx="10.5" cy="5.5" r="1.25" fill="currentColor" />
+      <circle cx="8" cy="8" r="1.25" fill="currentColor" />
+      <circle cx="5.5" cy="10.5" r="1.25" fill="currentColor" />
+      <circle cx="10.5" cy="10.5" r="1.25" fill="currentColor" />
     </svg>
   );
 }
