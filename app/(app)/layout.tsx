@@ -201,7 +201,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-transparent">
           <main ref={mainRef} className="flex-1 overflow-y-auto" style={{ position: "relative", zIndex: 1 }}>
-            <div key={pathname} className="page-enter pb-24 md:pb-12 max-w-[800px] mx-auto px-4 md:px-8 w-full mt-4 md:mt-12">
+            <div key={pathname} className={`page-enter pb-24 md:pb-12 ${pathname === "/log" ? 'w-full' : 'max-w-[800px] mx-auto px-4 md:px-8 w-full mt-4 md:mt-12'}`}>
               {children}
             </div>
           </main>

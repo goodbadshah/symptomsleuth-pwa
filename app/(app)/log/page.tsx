@@ -237,34 +237,86 @@ export default function LogPage() {
 
   return (
     <div style={{ minHeight: "100dvh", paddingBottom: "96px" }}>
-      {/* Hero date block */}
-      <div style={{ padding: "28px 20px 20px", borderBottom: "1px solid var(--border)" }}>
-        <h1
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "44px",
-            fontWeight: 400,
-            lineHeight: 1.05,
-            color: "var(--text-primary)",
-            margin: 0,
-          }}
-        >
-          {heading}
-        </h1>
-        <p
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "12px",
-            color: "var(--text-secondary)",
-            marginTop: "6px",
-            marginBottom: 0,
-            letterSpacing: "0.03em",
-          }}
-        >
-          {contextString}
-        </p>
+      {/* Sticky Header Box */}
+      <div 
+        className="sticky top-0 z-20"
+        style={{
+          background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.03) 20%, rgba(0,0,0,0) 100%), var(--bg-primary)",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        <div className="max-w-[800px] mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-4">
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "44px",
+              fontWeight: 400,
+              lineHeight: 1.05,
+              color: "var(--text-primary)",
+              margin: 0,
+            }}
+          >
+            {heading}
+          </h1>
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "12px",
+              color: "var(--text-secondary)",
+              marginTop: "6px",
+              marginBottom: "24px",
+              letterSpacing: "0.03em",
+            }}
+          >
+            {contextString}
+          </p>
+
+          {/* Section eyebrow */}
+          {symptoms.length > 0 && (
+            <div>
+              <p
+                style={{
+                  fontSize: "10px",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 500,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.15em",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1,
+                  marginBottom: "8px",
+                }}
+              >
+                TODAY&rsquo;S LOG
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "24px",
+                  fontWeight: 400,
+                  color: "var(--text-primary)",
+                  lineHeight: 1.2,
+                  margin: "0 0 4px",
+                }}
+              >
+                Rate Your Symptoms
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: "14px",
+                  color: "var(--text-secondary)",
+                  margin: 0,
+                  lineHeight: "1.4",
+                }}
+              >
+                One deliberate tap per symptom.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-      <div style={{ height: "24px" }} />
+
+      <div className="max-w-[800px] mx-auto px-4 md:px-8 pt-4">
 
       {symptoms.length === 0 && (
         <div className="px-5 py-12 text-center">
@@ -274,50 +326,6 @@ export default function LogPage() {
         </div>
       )}
 
-      {/* Section eyebrow */}
-      {symptoms.length > 0 && (
-        <div style={{ padding: "0 20px 16px" }}>
-          <p
-            style={{
-              fontSize: "10px",
-              fontFamily: "var(--font-body)",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              letterSpacing: "0.15em",
-              color: "var(--text-secondary)",
-              lineHeight: 1,
-              marginBottom: "8px",
-            }}
-          >
-            TODAY&rsquo;S LOG
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "24px",
-              fontWeight: 400,
-              color: "var(--text-primary)",
-              lineHeight: 1.2,
-              margin: "0 0 4px",
-            }}
-          >
-            Rate Your Symptoms
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "14px",
-              color: "var(--text-secondary)",
-              margin: 0,
-              lineHeight: "1.4",
-            }}
-          >
-            One deliberate tap per symptom.
-          </p>
-        </div>
-      )}
-
-      {/* Symptom groups */}
       <div className="pt-2">
         {groups.map(({ condition, symptoms: groupSymptoms }, index) => {
           const isCollapsed = useGrouping && collapsedGroups.has(condition);
@@ -484,6 +492,8 @@ export default function LogPage() {
             )}
           </span>
         </button>
+      </div>
+
       </div>
 
       <SaveConfirmModal
