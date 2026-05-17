@@ -17,16 +17,25 @@
 
   /* Severity scale - warmer palette (Editorial Stationery update) */
   --severity-0-fill: transparent;
-  --severity-0-border: #d1d1ce;
-  --severity-1: #c5dfb8;                /* mild - olive-sage, warmer than mint */
-  --severity-2: #a8cc97;                /* moderate-low - warm sage */
-  --severity-3: #f4c95d;                /* moderate - mustard, not neon */
-  --severity-4: #e8823a;                /* significant - muted warm orange */
-  --severity-5: #c8472f;                /* severe - terracotta-leaning red */
+  --severity-0-border: #737373; /* Richer Grey */
+  --severity-1: #00A36C; /* Rich Green */
+  --severity-2: #FFB600; /* Rich Gold */
+  --severity-3: #F95700; /* Rich Orange */
+  --severity-4: #E60000; /* Rich Red */
+  --severity-5: #990000; /* Deep Red */
 
   /* Context slider (neutral gray - not severity colors) */
   --context-slider-low: #d1d1ce;
   --context-slider-high: #4a4a4a;
+
+  /* Interactive physics for SeverityChipSelector */
+  --chip-pulse-hover: rgba(255, 255, 255, 0.85);
+  --chip-pulse-selected-1: var(--severity-1);
+  --chip-pulse-selected-2: var(--severity-2);
+  --chip-pulse-selected-3: var(--severity-3);
+  --chip-pulse-selected-4: var(--severity-4);
+  --chip-pulse-blend-hover: normal;
+  --chip-pulse-blend-selected: multiply;
 
   /* Border */
   --border: #e8e8e4;
@@ -56,12 +65,12 @@
   --nav-active-color: var(--accent);
 
   /* Severity chip selected text (adapts to dark mode) */
-  --chip-text-none: var(--text-primary);
-  --chip-text-mild: var(--text-primary);
-  --chip-text-moderate: #3D6134;
-  --chip-text-severe: #7C5A0B;
-  --chip-text-extreme: #7A3010;
-  --chip-text-context: #4a4a4a;
+  --chip-text-none: #ffffff;
+  --chip-text-mild: #ffffff;
+  --chip-text-moderate: #ffffff;
+  --chip-text-severe: #ffffff;
+  --chip-text-extreme: #ffffff;
+  --chip-text-context: #ffffff;
 
   /* Fonts */
   --font-display: var(--font-fraunces);
@@ -122,6 +131,8 @@
   --chip-text-severe: #ffffff;
   --chip-text-extreme: #ffffff;
   --chip-text-context: #ffffff;
+  --chip-pulse-blend-selected: screen;
+
   color-scheme: dark;
 }
 
@@ -156,6 +167,8 @@
     --chip-text-severe: #ffffff;
     --chip-text-extreme: #ffffff;
     --chip-text-context: #ffffff;
+  --chip-pulse-blend-selected: screen;
+
     color-scheme: dark;
   }
 }

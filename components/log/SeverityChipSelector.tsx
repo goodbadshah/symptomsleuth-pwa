@@ -39,59 +39,59 @@ const SEVERITY_CHIPS: ChipDef[] = [
   {
     label: "None",
     value: 0,
-    selectedBg: "rgba(209,209,206,0.5)",
-    defaultBg: "rgba(209,209,206,0.2)",
-    selectedBorder: "#D1D1CE",
-    selectedText: "var(--chip-text-none)",
+    selectedBg: "var(--severity-0-border)",
+    defaultBg: "rgba(115, 115, 115, 0.25)", /* Richer Grey */
+    selectedBorder: "var(--severity-0-border)",
+    selectedText: "#ffffff",
   },
   {
     label: "Mild",
     value: 1,
-    selectedBg: "rgba(197,223,184,0.5)",
-    defaultBg: "rgba(197,223,184,0.2)",
-    selectedBorder: "#C5DFB8",
-    selectedText: "var(--chip-text-mild)",
+    selectedBg: "var(--severity-1)",
+    defaultBg: "rgba(0, 163, 108, 0.25)", /* Rich Green */
+    selectedBorder: "var(--severity-1)",
+    selectedText: "#ffffff",
   },
   {
     label: "Medium",
     value: 2,
-    selectedBg: "rgba(168,204,151,0.5)",
-    defaultBg: "rgba(168,204,151,0.2)",
-    selectedBorder: "#A8CC97",
-    selectedText: "var(--chip-text-moderate)",
+    selectedBg: "var(--severity-2)",
+    defaultBg: "rgba(255, 182, 0, 0.25)", /* Rich Gold */
+    selectedBorder: "var(--severity-2)",
+    selectedText: "#ffffff",
   },
   {
     label: "Severe",
     value: 3,
-    selectedBg: "rgba(244,201,93,0.5)",
-    defaultBg: "rgba(244,201,93,0.2)",
-    selectedBorder: "#F4C95D",
-    selectedText: "var(--chip-text-severe)",
+    selectedBg: "var(--severity-3)",
+    defaultBg: "rgba(249, 87, 0, 0.25)", /* Rich Orange */
+    selectedBorder: "var(--severity-3)",
+    selectedText: "#ffffff",
   },
   {
     label: "Extreme",
     value: 4,
-    selectedBg: "rgba(232,130,58,0.5)",
-    defaultBg: "rgba(232,130,58,0.2)",
-    selectedBorder: "#E8823A",
-    selectedText: "var(--chip-text-extreme)",
+    selectedBg: "var(--severity-4)",
+    defaultBg: "rgba(230, 0, 0, 0.25)", /* Rich Red */
+    selectedBorder: "var(--severity-4)",
+    selectedText: "#ffffff",
   },
 ];
 
 const CONTEXT_SELECTED = {
-  bg: "rgba(74,74,74,0.4)",
-  defaultBg: "rgba(74,74,74,0.15)",
-  border: "#4A4A4A",
-  text: "var(--chip-text-context)",
+  bg: "var(--context-slider-high)",
+  defaultBg: "rgba(74,74,74,0.1)",
+  border: "var(--context-slider-high)",
+  text: "#ffffff",
 };
 
-// Map scale to box shadow glow colors
+// Map scale to box shadow glow colors (saturated and wide spread)
 const GLOW_COLORS = {
-  0: "rgba(209,209,206,0)",
-  1: "rgba(197,223,184,0.4)",
-  2: "rgba(168,204,151,0.6)",
-  3: "rgba(244,201,93,0.8)",
-  4: "rgba(232,130,58,0.9)",
+  0: "rgba(142,142,142,0)",
+  1: "var(--severity-1)",
+  2: "var(--severity-2)",
+  3: "var(--severity-3)",
+  4: "var(--severity-5)",
 };
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ export default function SeverityChipSelector({
       <div
         role="radiogroup"
         aria-label={label}
-        style={{ display: "flex", gap: "6px", width: "100%" }}
+        style={{ display: "flex", gap: "4px", width: "100%", margin: "0 -16px", padding: "0 16px" }}
       >
         {SEVERITY_CHIPS.map((chip, index) => {
           const selected = displayValue === chip.value;
@@ -174,13 +174,13 @@ export default function SeverityChipSelector({
               animate={selected ? "selected" : "rest"}
               variants={{
                 rest: { scale: 1, boxShadow: "0 0 0 1px rgba(0,0,0,0.04)" },
-                hover: { scale: 1.02, boxShadow: selected ? `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}` : "0 0 0 1px rgba(0,0,0,0.04)" },
-                tap: { scale: 0.95 },
+                hover: { scale: 1.04, boxShadow: selected ? `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}` : `0 0 0 1px var(--bg-primary), 0 0 0 1.5px ${sc.border}` },
+                tap: { scale: 0.90 },
                 selected: { scale: 1, boxShadow: `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}` }
               }}
               transition={{
                 type: "spring",
-                stiffness: 400,
+                stiffness: 700,
                 damping: 25,
               }}
               style={{
@@ -200,9 +200,23 @@ export default function SeverityChipSelector({
             >
               {/* Inner core - double-bezel architecture */}
               <motion.div
-                animate={{
-                  backgroundColor: selected ? sc.bg : sc.defaultBg,
-                  color: selected ? sc.text : "var(--text-secondary)",
+                variants={{
+                  rest: { 
+                    backgroundColor: selected ? sc.bg : sc.defaultBg,
+                    color: selected ? "#ffffff" : "var(--text-secondary)",
+                  },
+                  hover: { 
+                    backgroundColor: sc.bg, // Fully flood with saturated color
+                    color: "#ffffff" // Snap text to pure white
+                  },
+                  tap: {
+                    backgroundColor: sc.bg,
+                    color: "#ffffff"
+                  },
+                  selected: { 
+                    backgroundColor: sc.bg,
+                    color: "#ffffff"
+                  }
                 }}
                 style={{
                   height: "100%",
@@ -225,13 +239,13 @@ export default function SeverityChipSelector({
                     <motion.div
                       variants={{
                         rest: { opacity: 0, scale: 0.9 },
-                        hover: { opacity: [0.4, 0.7, 0.4], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } },
-                        selected: { opacity: [0.5, 0.9, 0.5], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } }
+                        hover: { opacity: [0.6, 0.9, 0.6], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } },
+                        selected: { opacity: [0.8, 1, 0.8], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } }
                       }}
                       style={{
                         position: "absolute",
                         inset: 0,
-                        background: `radial-gradient(circle at center, ${GLOW_COLORS[chip.value as keyof typeof GLOW_COLORS]}, transparent 70%)`,
+                        background: `radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 85%)`, /* 85% spread as requested in CLAUDE.md */
                         zIndex: 0,
                         pointerEvents: "none",
                       }}

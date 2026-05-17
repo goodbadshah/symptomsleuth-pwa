@@ -91,40 +91,28 @@ function SymptomGroup({
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className="mx-5 my-2"
       style={{
         ...entryStyle(inView, entryIndex),
-        padding: "6px",
-        borderRadius: "1.25rem",
-        boxShadow: "0 0 0 1px var(--bezel-ring)",
-        backgroundColor: "var(--bezel-outer-bg)",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <div
-        style={{
-          backgroundColor: "var(--bg-surface)",
-          boxShadow: "var(--bezel-inset-shadow)",
-          borderRadius: "0.875rem",
-          overflow: "hidden",
-        }}
+      <ConditionChapterMarker
+        condition={condition}
+        collapsed={useGrouping ? isCollapsed : false}
+        onToggle={useGrouping ? onToggle : undefined}
+        previewValues={groupSymptoms.slice(0, 5).map((s) => entries[s.id] ?? 0)}
       >
-        <ConditionChapterMarker
-          condition={condition}
-          collapsed={useGrouping ? isCollapsed : false}
-          onToggle={useGrouping ? onToggle : undefined}
-          previewValues={groupSymptoms.slice(0, 5).map((s) => entries[s.id] ?? 0)}
-        >
-          {groupSymptoms.map((symptom) => (
-            <SymptomRow
-              key={symptom.id}
-              symptom={symptom}
-              value={entries[symptom.id] ?? 0}
-              onChange={(v) => onEntryChange(symptom.id, v)}
-              justSaved={justSaved}
-            />
-          ))}
-        </ConditionChapterMarker>
-      </div>
+        {groupSymptoms.map((symptom) => (
+          <SymptomRow
+            key={symptom.id}
+            symptom={symptom}
+            value={entries[symptom.id] ?? 0}
+            onChange={(v) => onEntryChange(symptom.id, v)}
+            justSaved={justSaved}
+          />
+        ))}
+      </ConditionChapterMarker>
     </div>
   );
 }
@@ -351,12 +339,12 @@ export default function LogPage() {
       </div>
 
       {/* Food Triggers */}
-      <div className="mx-5 my-2">
+      <div className="my-2" style={{ margin: "0 -16px" }}>
         <FoodTriggers value={context} onChange={setContext} />
       </div>
 
       {/* Context */}
-      <div className="mx-5 my-2">
+      <div className="my-2" style={{ margin: "0 -16px" }}>
         <ContextFields
           value={context}
           onChange={setContext}
@@ -365,13 +353,15 @@ export default function LogPage() {
       </div>
 
       {/* Note */}
-      <div className="mx-5 my-2" style={{ borderBottom: "1px solid var(--border)" }}>
+      <div className="my-2" style={{ borderBottom: "1px solid var(--border)", margin: "0 -16px" }}>
         <button
           onClick={() => setNoteOpen((o) => !o)}
           className="w-full flex items-center justify-between tap-feedback"
           style={{
             paddingTop: "16px",
             paddingBottom: "16px",
+            paddingLeft: "16px",
+            paddingRight: "16px",
             minHeight: "56px",
             backgroundColor: "transparent",
             border: "none",
@@ -432,7 +422,7 @@ export default function LogPage() {
       </div>
 
       {/* Save / Update - Button-in-Button */}
-      <div className="px-5 pt-6">
+      <div className="pt-6" style={{ paddingLeft: "16px", paddingRight: "16px", paddingBottom: "20px" }}>
         <button
           onClick={handleSave}
           disabled={saveState === "saved"}

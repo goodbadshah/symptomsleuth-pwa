@@ -40,25 +40,16 @@ export default function FoodTriggers({ value, onChange }: Props) {
   }
 
   return (
-    // Outer shell - Double-Bezel
     <div
       style={{
-        padding: "6px",
-        borderRadius: "1.25rem",
-        boxShadow: "0 0 0 1px var(--bezel-ring)",
-        backgroundColor: "var(--bezel-outer-bg)",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "var(--bg-surface)",
+        borderBottom: "1px solid var(--border)",
+        margin: "0 -16px",
       }}
     >
-      {/* Inner core */}
-      <div
-        style={{
-          backgroundColor: "var(--bg-surface)",
-          boxShadow: "var(--bezel-inset-shadow)",
-          borderRadius: "0.875rem",
-          overflow: "hidden",
-        }}
-      >
-        {/* Toggle header */}
+      {/* Toggle header */}
         <button
           onClick={() => setOpen((o) => !o)}
           className="w-full flex items-center justify-between tap-feedback"
@@ -129,7 +120,7 @@ export default function FoodTriggers({ value, onChange }: Props) {
           <div style={{ minHeight: 0 }}>
             <div
               style={{
-                padding: "0 12px 14px",
+                padding: "0 16px 14px",
               }}
             >
               <p
@@ -212,7 +203,6 @@ export default function FoodTriggers({ value, onChange }: Props) {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }
