@@ -67,7 +67,8 @@ Apply this to:
 - On desktop, particles disperse smoothly around the cursor. 
 - On mobile, they drift naturally and respond slightly to scroll/gyroscope.
 - Panels, nav bars, and major containers should utilize **Glassmorphism** (`backdrop-blur-md` + translucent overlays) stacked over the murmuration background to create premium, macOS-like depth.
-- **Severity Chips:** Living gradients. Selected states feature a breathing/pulsing glow with subtle colored ambient drop-shadows matching the severity level (1=mild green pulse, 4=intense red glow).
+- **Severity Chips:** Living gradients. Selected states feature a breathing/pulsing radial glow, now larger (85% spread) and deeply saturated.
+- **Button Interactions:** Rigidly lock into deep, fully saturated pure colors on hover, tap, and selection without washing out to pastel. Text dynamically snaps to pure `#ffffff` white to contrast against the heavy cores.
 
 ### Grouping Patterns (in order of preference)
 
@@ -128,13 +129,13 @@ UI text must be minimal. Claude Code will always err toward more words - resist 
 - No jerky/linear animations - motion must use physics-based fluid springs (`framer-motion`)
 - No emoji as UI elements - use Phosphor Icons (@phosphor-icons/react) or clean inline SVGs
 - No emoticon faces (😊 😐 😖) anywhere - severity is expressed via the Severity Glyph System (see Frontend Aesthetics), never via faces. Faces read as pediatric pain-scale posters and undermine the "refined medical tool for adults" positioning.
-- No "wellness app" pastel palette
+- No "wellness app" pastel palette. Only use vibrant, saturated colors for active/selected states.
 - No noise/grain textures on interactive surfaces (cards, chips, buttons, inputs, modals, text containers). Paper-grain noise at ≤0.04 opacity on the base background shell is permitted and specified - see Backgrounds & Visual Details.
 - No card-heavy layouts - see Grouping Patterns above. Cards only for actionable grouped units.
 - No generic health iconography (hearts, plus signs, stethoscopes)
 - No pure black (#000000) - use `--text-primary` (#1A1A1A)
 - No AI purple/blue aesthetic - no neon gradients, no glowing box-shadows
-- No oversaturated accent colors - saturation < 80% on all accents
+- Always embrace fully saturated colors for active/selected states, ensuring text stays pure `#ffffff` white against them.
 - No generic 3-column equal card rows for feature sections
 - No generic placeholder data - use realistic, messy numbers (47.2%, not 99.99%)
 - No filler copy: "Elevate", "Seamless", "Unleash", "Next-Gen", "Empower"
@@ -216,12 +217,12 @@ These patterns mark text as AI-generated and erode the authored, editorial voice
 --accent: #2D6A4F             /* deep sage green */
 --accent-light: #D8F3DC
 --severity-0-fill: transparent          /* unlogged - no fill */
---severity-0-border: #D1D1CE           /* warm light gray ring - unlogged state */
---severity-1: #C5DFB8                   /* mild - olive-sage, warmer than mint */
---severity-2: #A8CC97                   /* moderate-low - warm sage */
---severity-3: #F4C95D                   /* moderate - mustard, not neon */
---severity-4: #E8823A                   /* significant - muted warm orange */
---severity-5: #C8472F                   /* severe - terracotta-leaning red */
+--severity-0-border: #8E8E8E;           /* warm light gray ring - unlogged state */
+--severity-1: #2E7D32;                  /* Vibrant Mild */
+--severity-2: #FFB300;                  /* Vibrant Moderate */
+--severity-3: #F57C00;                  /* Vibrant Severe */
+--severity-4: #D32F2F;                  /* Vibrant Significant */
+--severity-5: #B71C1C;                  /* Vibrant Extreme */
 --context-slider-low: #D1D1CE          /* neutral warm gray - context sliders only */
 --context-slider-high: #4A4A4A         /* dark warm gray - context sliders only */
 --border: #E8E8E4
@@ -815,11 +816,8 @@ The chip selector replaces all sliders and circle buttons. 5 chips in a horizont
   - Label beneath: DM Sans 12px, weight 500
 - Chip dimensions: 64px wide × 56px tall (reduced from previous 72px height - tightens the row, feels more deliberate)
 - Resting state: `--bg-surface` inner core, `--text-primary` label, glyph at `--text-secondary`
-- Selected state - claimed, not highlighted:
-  - Inner core fills with severity color at 25% opacity (e.g., for Extreme: `rgba(200, 71, 47, 0.25)`)
-  - Outer shell gains a 1.5px ring in the severity color, offset outside the existing bezel by 1px (`ring-offset-1 ring-offset-[--bg-primary]`)
-  - Label and glyph shift to the severity color at full opacity
-  - Subtle bold: label weight increases from 500 to 600
+- Hover and Tap states: Button background fully floods with the deep, 100% thick, saturated primary color and the text instantly goes pure `#ffffff` white.
+- Selected state - claimed, not highlighted: Perfectly preserves that same heavy saturated core color and pure `#ffffff` white text. No fading to pastel, no text going back to dark gray.
 - On `:active` (press feedback): `translateY(0.5px)` + `shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]` - chip feels pressed into the paper. 150ms `cubic-bezier(0.16, 1, 0.3, 1)`.
 - Only one chip per symptom row can be selected at a time. Tapping a different chip commits the new value and animates the selected ring from old chip to new (opacity fade both, 200ms).
 - Hidden `<input type="radio">` group behind each row for accessibility. Chips are labeled radio buttons semantically.

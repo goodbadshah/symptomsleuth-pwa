@@ -158,7 +158,7 @@ When analyzing symptom patterns:
 # UI Presentation Guidelines (AI Sleuth)
 
 - The AI chat interface should embrace dynamic elements: glowing "thinking" states instead of static loading bars.
-- When AI responses mention specific severities, inline severity glyphs should render with their corresponding ambient glow logic.
+- When AI responses mention specific severities, inline severity glyphs should render with their corresponding ambient glow logic, adhering to the vibrant and saturated severity color palette (never pastel or washed out).
 ```
 
 ### Condition-Specific Prompts
