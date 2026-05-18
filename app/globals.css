@@ -187,21 +187,7 @@ body {
 }
 
 /* Food trigger chip label colors */
-.food-trigger-label {
-  color: var(--text-primary);
-}
-.food-trigger-label--selected {
-  color: var(--accent);
-}
-/* Dark mode: use charcoal background color on the light green fill for contrast */
-[data-theme="dark"] .food-trigger-label--selected {
-  color: var(--bg-primary);
-}
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme="light"]) .food-trigger-label--selected {
-    color: var(--bg-primary);
-  }
-}
+
 
 /* Canvas blend modes */
 .murmuration-canvas {
