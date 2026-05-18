@@ -112,7 +112,7 @@ function SymptomGroup({
         condition={condition}
         collapsed={isCollapsed}
         onToggle={onToggle}
-        previewValues={groupSymptoms.slice(0, 5).map((s) => entries[s.id] ?? 0)}
+        previewValues={groupSymptoms.map((s) => entries[s.id] ?? -1)}
         complete={complete}
         justCompleted={justCompleted}
         onNothingToReport={onNothingToReport}

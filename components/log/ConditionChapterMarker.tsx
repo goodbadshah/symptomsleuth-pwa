@@ -180,23 +180,29 @@ export default function ConditionChapterMarker({
           )}
         </div>
 
-        {collapsed && previewValues && previewValues.length > 0 && (
+        {collapsed && previewValues && previewValues.filter(v => v >= 0).length > 0 && (
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
               padding: "0 0px 14px",
+              flexWrap: "wrap",
             }}
           >
-            {previewValues.slice(0, 5).map((v, i) => (
+            {previewValues.filter(v => v >= 0).map((v, i) => (
               <span
                 key={i}
                 style={{
-                  color:
-                    v >= 0 ? "var(--text-primary)" : "var(--text-secondary)",
+                  backgroundColor: `var(--severity-${v + 1})`,
+                  color: "#ffffff",
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "center",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  boxShadow: "0 0 0 1px var(--bg-primary), 0 0 0 2px rgba(0,0,0,0.06)",
                 }}
               >
                 <SeverityGlyph value={v} size={14} />
