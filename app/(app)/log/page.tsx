@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 import { useAppState } from "@/app/providers";
 import type { DailyLog, DailyContext, SymptomEntry, Symptom } from "@/app/providers";
 import ContextFields from "@/components/log/ContextFields";
@@ -647,10 +648,12 @@ export default function LogPage() {
 
       {/* Save / Update - Button-in-Button */}
       <div className="pt-6" style={{ paddingLeft: "16px", paddingRight: "16px", paddingBottom: "20px" }}>
-        <button
+        <motion.button
           onClick={handleSave}
           disabled={saveState === "saved"}
-          className="group w-full flex items-center justify-between px-5 tap-feedback"
+          whileHover={saveState !== "saved" ? { scale: 1.02 } : undefined}
+          whileTap={saveState !== "saved" ? { scale: 0.98 } : undefined}
+          className={`group w-full flex items-center justify-between px-5 tap-feedback ${saveState !== "saved" ? "shadow-[0_4px_14px_rgba(45,106,79,0.2)]" : ""}`}
           style={{
             height: "56px",
             borderRadius: "1.25rem",
@@ -660,6 +663,7 @@ export default function LogPage() {
             border: "none",
             cursor: saveState === "saved" ? "default" : "pointer",
             position: "relative",
+            transition: "box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
           }}
           aria-label={isUpdate ? "Update today's log" : "Save today's log"}
         >
@@ -689,12 +693,8 @@ export default function LogPage() {
           </span>
 
           <span
-            className="w-7 h-7 rounded-full flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px"
-            style={{
-              backgroundColor: "rgba(0,0,0,0.12)",
-              transition: "transform 150ms cubic-bezier(0.16,1,0.3,1)",
-              flexShrink: 0,
-            }}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px"
+            style={{ flexShrink: 0 }}
             aria-hidden="true"
           >
             {saveState === "saved" ? (
@@ -707,7 +707,7 @@ export default function LogPage() {
               </svg>
             )}
           </span>
-        </button>
+        </motion.button>
       </div>
 
       </div>
