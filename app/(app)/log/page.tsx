@@ -57,7 +57,7 @@ function getRelativeTime(isoString: string): string {
 
 // ─── Types ───────────────────────────────────────────────────────────────────────────────────
 
-type EntryMap = Record<string, number>;
+type EntryMap = Record<string, number | undefined>;
 
 interface ConditionGroup {
   condition: string;
@@ -220,9 +220,11 @@ export default function LogPage() {
 
   const [entries, setEntries] = useState<EntryMap>(() => {
     if (existingLog) {
-      return Object.fromEntries(existingLog.entries.map((e) => [e.symptomId, e.value]));
+      const map: EntryMap = Object.fromEntries(symptoms.map((s) => [s.id, 0]));
+      existingLog.entries.forEach(e => { map[e.symptomId] = e.value; });
+      return map;
     }
-    return Object.fromEntries(symptoms.map((s) => [s.id, 0]));
+    return {};
   });
 
   const [context, setContext] = useState<DailyContext>(existingLog?.context ?? {});
