@@ -52,7 +52,7 @@ export default function SymptomWizard({
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       {groupSymptoms.map((symptom, index) => {
-        const value = entries[symptom.id] ?? 0;
+        const value = entries[symptom.id];
         const isActive = !complete && index === activeIndex;
         const isDone = complete || index < activeIndex;
         const isUpcoming = !complete && index > activeIndex;
@@ -69,7 +69,9 @@ export default function SymptomWizard({
                 symptom={symptom}
                 value={value}
                 onChange={(v) => {
-                  vibrate(10);
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                    navigator.vibrate(10);
+                  }
                   onEntryChange(symptom.id, v);
                 }}
                 justSaved={justSaved}
@@ -102,7 +104,7 @@ function ActiveRow({
   positionLabel,
 }: {
   symptom: Symptom;
-  value: number;
+  value: number | undefined;
   onChange: (v: number) => void;
   justSaved: boolean;
   positionLabel: string;
@@ -165,7 +167,7 @@ function ActiveRow({
         backgroundColor: "var(--bg-surface)",
       }}
     >
-      {justSaved && value > 0 && (
+      {justSaved && value !== undefined && value >= 0 && (
         <span
           aria-hidden="true"
           style={{
@@ -240,7 +242,7 @@ function CompactRow({
   showUpNextLabel,
 }: {
   symptom: Symptom;
-  value: number;
+  value: number | undefined;
   state: "done" | "upcoming";
   onJump: () => void;
   isLast: boolean;
@@ -248,12 +250,37 @@ function CompactRow({
 }) {
   const [hover, setHover] = useState(false);
   const isDone = state === "done";
+  const hasSeverity = isDone && value !== undefined && value >= 0;
+  const displayValue = Math.min(value ?? 0, 4);
 
-  const nameColor = isDone ? "var(--text-primary)" : "var(--text-secondary)";
+  const SOLID_BGS = [
+    "var(--severity-1)",
+    "var(--severity-2)",
+    "var(--severity-3)",
+    "var(--severity-4)",
+    "var(--severity-5)"
+  ];
+
+  const bgColor = hasSeverity 
+    ? SOLID_BGS[displayValue]
+    : hover ? "rgba(0,0,0,0.015)" : "transparent";
+
+  const nameColor = hasSeverity 
+    ? "#ffffff" 
+    : isDone ? "var(--text-primary)" : "var(--text-secondary)";
+    
+  const glyphColor = hasSeverity
+    ? "#ffffff"
+    : value !== undefined && value >= 0 && isDone ? "var(--text-primary)" : "var(--text-secondary)";
+    
+  const secondaryColor = hasSeverity 
+    ? "rgba(255,255,255,0.7)" 
+    : "var(--text-secondary)";
+
   const opacity = isDone ? 1 : 0.6;
   const scale = isDone ? 1 : 0.98;
   const filter = isDone ? "none" : "blur(0.5px)";
-  const valueLabel = value > 0 ? CHIP_LABELS[value] : isDone ? "None" : "";
+  const valueLabel = isDone ? CHIP_LABELS[displayValue] : "";
 
   return (
     <button
@@ -265,18 +292,13 @@ function CompactRow({
       aria-label={`Edit ${symptom.name}`}
       style={{
         position: "relative",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "12px",
-        padding: "12px 16px",
-        margin: "0 -16px",
-        borderBottom: isLast ? "none" : "1px solid var(--border)",
-        backgroundColor: hover ? "rgba(0,0,0,0.015)" : "transparent",
-        border: "none",
-        borderTop: "none",
-        borderLeft: "none",
-        borderRight: "none",
+        display: "block",
+        width: "100%",
+        padding: "16px 14px",
+        margin: "0 0 2px 0",
+        borderRadius: "0px",
+        border: hasSeverity ? "1px solid transparent" : "1px solid var(--border)",
+        backgroundColor: bgColor,
         cursor: "pointer",
         textAlign: "left",
         WebkitTapHighlightColor: "transparent",
@@ -288,56 +310,51 @@ function CompactRow({
         minHeight: "44px",
       }}
     >
-      <p
-        style={{
-          fontSize: "16px",
-          fontWeight: 400,
-          color: nameColor,
-          fontFamily: "var(--font-body)",
-          margin: 0,
-          flex: 1,
-        }}
-      >
-        {symptom.name}
-      </p>
-
-      {isDone ? (
-        <span
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+        <p
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            color: value > 0 ? "var(--text-primary)" : "var(--text-secondary)",
+            fontSize: "16px",
+            fontWeight: hasSeverity ? 500 : 400,
+            color: nameColor,
+            fontFamily: "var(--font-body)",
+            margin: 0,
+            flex: 1,
+            lineHeight: 1.1,
           }}
         >
-          <SeverityGlyph value={value} size={14} />
+          {symptom.name}
+        </p>
+
+        {isDone ? (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              color: glyphColor,
+              fontWeight: hasSeverity ? 600 : 400,
+              fontSize: "14px",
+              fontFamily: "var(--font-body)",
+              lineHeight: 1.1,
+            }}
+          >
+            <SeverityGlyph value={value ?? 0} size={14} />
+            <span style={{ color: hasSeverity ? "#ffffff" : "var(--text-secondary)" }}>
+              {valueLabel}
+            </span>
+          </span>
+        ) : showUpNextLabel ? (
           <span
             style={{
               fontSize: "13px",
-              fontFamily: "var(--font-mono)",
               color: "var(--text-secondary)",
-              letterSpacing: "0.03em",
-              minWidth: "44px",
-              textAlign: "right",
+              letterSpacing: "0.02em",
             }}
           >
-            {valueLabel}
+            Up next
           </span>
-        </span>
-      ) : (
-        <span
-          style={{
-            fontSize: "12px",
-            fontFamily: "var(--font-mono)",
-            color: "var(--text-secondary)",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            visibility: showUpNextLabel ? "visible" : "hidden",
-          }}
-        >
-          Up next
-        </span>
-      )}
+        ) : null}
+      </div>
     </button>
   );
 }

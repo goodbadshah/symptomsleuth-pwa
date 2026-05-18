@@ -39,41 +39,41 @@ const SEVERITY_CHIPS: ChipDef[] = [
   {
     label: "None",
     value: 0,
-    selectedBg: "var(--severity-0-border)",
-    defaultBg: "rgba(115, 115, 115, 0.25)", /* Richer Grey */
-    selectedBorder: "var(--severity-0-border)",
-    selectedText: "#ffffff",
-  },
-  {
-    label: "Mild",
-    value: 1,
     selectedBg: "var(--severity-1)",
     defaultBg: "rgba(0, 163, 108, 0.25)", /* Rich Green */
     selectedBorder: "var(--severity-1)",
     selectedText: "#ffffff",
   },
   {
-    label: "Medium",
-    value: 2,
+    label: "Mild",
+    value: 1,
     selectedBg: "var(--severity-2)",
     defaultBg: "rgba(255, 182, 0, 0.25)", /* Rich Gold */
     selectedBorder: "var(--severity-2)",
     selectedText: "#ffffff",
   },
   {
-    label: "Severe",
-    value: 3,
+    label: "Medium",
+    value: 2,
     selectedBg: "var(--severity-3)",
     defaultBg: "rgba(249, 87, 0, 0.25)", /* Rich Orange */
     selectedBorder: "var(--severity-3)",
     selectedText: "#ffffff",
   },
   {
-    label: "Extreme",
-    value: 4,
+    label: "Severe",
+    value: 3,
     selectedBg: "var(--severity-4)",
     defaultBg: "rgba(230, 0, 0, 0.25)", /* Rich Red */
     selectedBorder: "var(--severity-4)",
+    selectedText: "#ffffff",
+  },
+  {
+    label: "Extreme",
+    value: 4,
+    selectedBg: "var(--severity-5)",
+    defaultBg: "rgba(106, 13, 173, 0.25)", /* Purple */
+    selectedBorder: "var(--severity-5)",
     selectedText: "#ffffff",
   },
 ];
@@ -87,18 +87,18 @@ const CONTEXT_SELECTED = {
 
 // Map scale to box shadow glow colors (saturated and wide spread)
 const GLOW_COLORS = {
-  0: "rgba(142,142,142,0)",
-  1: "var(--severity-1)",
-  2: "var(--severity-2)",
-  3: "var(--severity-3)",
+  0: "var(--severity-1)",
+  1: "var(--severity-2)",
+  2: "var(--severity-3)",
+  3: "var(--severity-4)",
   4: "var(--severity-5)",
 };
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  /** 0 = None, 1–4 = severity level. Values ≥ 5 clamped to 4 (legacy compat). */
-  value: number;
+  /** undefined means unselected, 0 = None, 1–4 = severity level. */
+  value: number | undefined;
   onChange: (value: number) => void;
   /** Used for aria-label on the radiogroup */
   label?: string;
@@ -117,7 +117,7 @@ export default function SeverityChipSelector({
   label = "Severity",
   scale = "severity",
 }: Props) {
-  const displayValue = Math.min(value, 4);
+  const displayValue = value === undefined ? undefined : Math.min(value, 4);
 
   function handleChipPress(chipValue: number) {
     if (chipValue === displayValue) return; // same chip - no-op
@@ -235,7 +235,7 @@ export default function SeverityChipSelector({
               >
                 {/* Animated Glow Layer strictly inside the chip for center pulse */}
                 <AnimatePresence>
-                  {(scale === "severity" && chip.value > 0) && (
+                  {(scale === "severity" && chip.value >= 0) && (
                     <motion.div
                       variants={{
                         rest: { opacity: 0, scale: 0.9 },

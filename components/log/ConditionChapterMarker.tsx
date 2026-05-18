@@ -194,7 +194,7 @@ export default function ConditionChapterMarker({
                 key={i}
                 style={{
                   color:
-                    v > 0 ? "var(--text-primary)" : "var(--text-secondary)",
+                    v >= 0 ? "var(--text-primary)" : "var(--text-secondary)",
                   display: "flex",
                   alignItems: "center",
                 }}

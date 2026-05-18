@@ -327,8 +327,8 @@ export default function LogPage() {
       const symptomIndex = group.symptoms.findIndex((s) => s.id === symptomId);
       const currentActive = activeSymptomIndex[group.condition] ?? 0;
 
-      // Only auto-advance when committing the active symptom and value > 0.
-      if (value > 0 && symptomIndex === currentActive) {
+      // Only auto-advance when committing the active symptom.
+      if (symptomIndex === currentActive) {
         const isLastSymptom = symptomIndex === group.symptoms.length - 1;
         if (isLastSymptom) {
           // Condition complete — schedule advance after chip animation settles.
