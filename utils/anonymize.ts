@@ -29,7 +29,7 @@ export interface AnonymousLogEntry {
   context?: {
     sleepQuality?: number;  // 1-5
     stressLevel?: number;   // 1-5
-    exercise?: boolean;
+    exercise?: boolean | number;
     foodTriggers?: string[]; // included for community correlation analysis
     // menstrualCycleDay is intentionally omitted
   };

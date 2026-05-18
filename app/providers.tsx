@@ -33,7 +33,7 @@ export interface SymptomEntry {
 export interface DailyContext {
   sleepQuality?: number;
   stressLevel?: number;
-  exercise?: boolean;
+  exercise?: boolean | number;
   menstrualCycleDay?: number;
   foodTriggers?: string[];
 }

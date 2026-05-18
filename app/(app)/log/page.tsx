@@ -377,7 +377,7 @@ export default function LogPage() {
   }
 
   // Progress counts — every symptom is one unit. A condition marked complete via
-  // "Nothing today" counts all its symptoms as logged even though their values are 0.
+  // "No symptoms today" counts all its symptoms as logged even though their values are 0.
   const totalSymptomCount = groups.reduce((sum, g) => sum + g.symptoms.length, 0);
   const loggedSymptomCount = groups.reduce((sum, g) => {
     if (completedConditions.has(g.condition)) return sum + g.symptoms.length;

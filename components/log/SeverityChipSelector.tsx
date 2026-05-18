@@ -108,6 +108,7 @@ interface Props {
    */
   scale?: "severity" | "context";
   customLabels?: string[];
+  reversePalette?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -118,6 +119,7 @@ export default function SeverityChipSelector({
   label = "Severity",
   scale = "severity",
   customLabels,
+  reversePalette = false,
 }: Props) {
   const displayValue = value === undefined ? undefined : Math.min(value, 4);
 
@@ -142,14 +144,17 @@ export default function SeverityChipSelector({
           const GlyphComp = ORDERED_CHIP_GLYPHS[index];
 
           // Determine selected colors based on scale
+          const sourceChipIndex = reversePalette ? SEVERITY_CHIPS.length - 1 - index : index;
+          const sourceChip = SEVERITY_CHIPS[sourceChipIndex];
+
           const sc =
             scale === "context"
               ? CONTEXT_SELECTED
               : {
-                  bg: chip.selectedBg,
-                  defaultBg: chip.defaultBg,
-                  border: chip.selectedBorder,
-                  text: chip.selectedText,
+                  bg: sourceChip.selectedBg,
+                  defaultBg: sourceChip.defaultBg,
+                  border: sourceChip.selectedBorder,
+                  text: sourceChip.selectedText,
                 };
 
           // Outer ring: severity-colored offset ring when selected,
@@ -159,7 +164,7 @@ export default function SeverityChipSelector({
             : "0 0 0 1px rgba(0,0,0,0.04)";
 
           const glowColor = scale === "severity" 
-            ? GLOW_COLORS[chip.value as keyof typeof GLOW_COLORS] 
+            ? GLOW_COLORS[sourceChip.value as keyof typeof GLOW_COLORS] 
             : "rgba(74,74,74,0.4)";
 
           return (
@@ -266,7 +271,7 @@ export default function SeverityChipSelector({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {chip.label}
+                    {customLabels ? customLabels[index] : chip.label}
                   </span>
                 </div>
               </motion.div>
