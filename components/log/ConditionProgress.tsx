@@ -6,14 +6,14 @@ interface Props {
 }
 
 /**
- * Segmented hairline progress indicator.
- * One segment per condition. Fills as each condition completes.
- * Sits to the right of "Rate Your Symptoms" subheading.
+ * Progress bar anchored next to "Rate Your Symptoms".
+ * Solid track + accent fill + DM Mono count label.
+ * Visible from day 1, no false precision.
  */
 export default function ConditionProgress({ total, completed }: Props) {
   if (total <= 0) return null;
 
-  const segments = Array.from({ length: total }, (_, i) => i < completed);
+  const pct = Math.min(100, Math.round((completed / total) * 100));
 
   return (
     <div
@@ -21,29 +21,47 @@ export default function ConditionProgress({ total, completed }: Props) {
       aria-valuemin={0}
       aria-valuemax={total}
       aria-valuenow={completed}
-      aria-label={`${completed} of ${total} conditions logged`}
+      aria-label={`${completed} of ${total} symptoms logged`}
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "6px",
+        gap: "10px",
         flexShrink: 0,
       }}
     >
-      {segments.map((filled, i) => (
-        <span
-          key={i}
+      <div
+        style={{
+          position: "relative",
+          width: "84px",
+          height: "6px",
+          borderRadius: "999px",
+          backgroundColor: "var(--border)",
+          overflow: "hidden",
+        }}
+      >
+        <div
           style={{
-            display: "block",
-            width: "20px",
-            height: "3px",
-            borderRadius: "2px",
-            backgroundColor: filled ? "var(--accent)" : "var(--border)",
-            transition:
-              "background-color 400ms cubic-bezier(0.32, 0.72, 0, 1), transform 400ms cubic-bezier(0.32, 0.72, 0, 1)",
-            transformOrigin: "left center",
+            position: "absolute",
+            inset: 0,
+            width: `${pct}%`,
+            backgroundColor: "var(--accent)",
+            borderRadius: "999px",
+            transition: "width 500ms cubic-bezier(0.32, 0.72, 0, 1)",
           }}
         />
-      ))}
+      </div>
+      <span
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: "11px",
+          color: "var(--text-secondary)",
+          letterSpacing: "0.03em",
+          fontVariantNumeric: "tabular-nums",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {completed} / {total}
+      </span>
     </div>
   );
 }

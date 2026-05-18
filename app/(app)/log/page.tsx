@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppState } from "@/app/providers";
 import type { DailyLog, DailyContext, SymptomEntry, Symptom } from "@/app/providers";
-import SymptomRow from "@/components/log/SymptomRow";
 import ContextFields from "@/components/log/ContextFields";
 import FoodTriggers from "@/components/log/FoodTriggers";
 import { submitAnonymousLog } from "@/utils/community";
@@ -14,6 +13,7 @@ import { pickRandomMessage } from "@/utils/logMessages";
 import type { LogMessage } from "@/utils/logMessages";
 import ConditionChapterMarker from "@/components/log/ConditionChapterMarker";
 import ConditionProgress from "@/components/log/ConditionProgress";
+import SymptomWizard from "@/components/log/SymptomWizard";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────────────────
 
@@ -72,7 +72,9 @@ function SymptomGroup({
   isCollapsed,
   onToggle,
   entries,
+  activeSymptomIndex,
   onEntryChange,
+  onSetActiveSymptomIndex,
   justSaved,
   entryIndex,
   complete,
@@ -84,7 +86,9 @@ function SymptomGroup({
   isCollapsed: boolean;
   onToggle: () => void;
   entries: EntryMap;
+  activeSymptomIndex: number;
   onEntryChange: (id: string, v: number) => void;
+  onSetActiveSymptomIndex: (index: number) => void;
   justSaved: boolean;
   entryIndex: number;
   complete: boolean;
@@ -111,15 +115,15 @@ function SymptomGroup({
         justCompleted={justCompleted}
         onNothingToReport={onNothingToReport}
       >
-        {groupSymptoms.map((symptom) => (
-          <SymptomRow
-            key={symptom.id}
-            symptom={symptom}
-            value={entries[symptom.id] ?? 0}
-            onChange={(v) => onEntryChange(symptom.id, v)}
-            justSaved={justSaved}
-          />
-        ))}
+        <SymptomWizard
+          groupSymptoms={groupSymptoms}
+          entries={entries}
+          activeIndex={activeSymptomIndex}
+          onEntryChange={onEntryChange}
+          onSetActiveIndex={onSetActiveSymptomIndex}
+          justSaved={justSaved}
+          complete={complete}
+        />
       </ConditionChapterMarker>
     </div>
   );
@@ -204,6 +208,15 @@ export default function LogPage() {
   // One-shot pulse target — the condition that *just* transitioned to complete.
   const [justCompletedCondition, setJustCompletedCondition] = useState<string | null>(null);
 
+  // Per-symptom wizard cursor inside each condition. Starts at 0 for every group.
+  const [activeSymptomIndex, setActiveSymptomIndex] = useState<Record<string, number>>(() => {
+    const map: Record<string, number> = {};
+    groups.forEach((g) => {
+      map[g.condition] = 0;
+    });
+    return map;
+  });
+
   const [entries, setEntries] = useState<EntryMap>(() => {
     if (existingLog) {
       return Object.fromEntries(existingLog.entries.map((e) => [e.symptomId, e.value]));
@@ -259,17 +272,43 @@ export default function LogPage() {
   function handleEntryChange(symptomId: string, value: number) {
     setEntries((prev) => {
       const next = { ...prev, [symptomId]: value };
-      // Did this commit just complete a condition?
       const group = groups.find((g) => g.symptoms.some((s) => s.id === symptomId));
-      if (group && !completedConditions.has(group.condition)) {
-        const allFilled = group.symptoms.every((s) => (next[s.id] ?? 0) > 0);
-        if (allFilled) {
-          // Defer advance so the chip's own commit animation runs first.
-          window.setTimeout(() => advanceFromCondition(group.condition), 150);
+      if (!group) return next;
+
+      const symptomIndex = group.symptoms.findIndex((s) => s.id === symptomId);
+      const currentActive = activeSymptomIndex[group.condition] ?? 0;
+
+      // Only auto-advance when committing the active symptom and value > 0.
+      if (value > 0 && symptomIndex === currentActive) {
+        const isLastSymptom = symptomIndex === group.symptoms.length - 1;
+        if (isLastSymptom) {
+          // Condition complete — schedule advance after chip animation settles.
+          if (!completedConditions.has(group.condition)) {
+            window.setTimeout(() => advanceFromCondition(group.condition), 150);
+          }
+        } else {
+          // Step to next symptom in this condition.
+          window.setTimeout(() => {
+            setActiveSymptomIndex((prevMap) => ({
+              ...prevMap,
+              [group.condition]: symptomIndex + 1,
+            }));
+          }, 150);
         }
       }
       return next;
     });
+  }
+
+  function handleSetActiveSymptomIndex(condition: string, index: number) {
+    // Jumping back into a symptom un-completes the condition so it can be edited.
+    setCompletedConditions((prev) => {
+      if (!prev.has(condition)) return prev;
+      const next = new Set(prev);
+      next.delete(condition);
+      return next;
+    });
+    setActiveSymptomIndex((prev) => ({ ...prev, [condition]: index }));
   }
 
   function handleNothingToReport(condition: string) {
@@ -284,6 +323,14 @@ export default function LogPage() {
     });
     advanceFromCondition(condition);
   }
+
+  // Progress counts — every symptom is one unit. A condition marked complete via
+  // "Nothing today" counts all its symptoms as logged even though their values are 0.
+  const totalSymptomCount = groups.reduce((sum, g) => sum + g.symptoms.length, 0);
+  const loggedSymptomCount = groups.reduce((sum, g) => {
+    if (completedConditions.has(g.condition)) return sum + g.symptoms.length;
+    return sum + (activeSymptomIndex[g.condition] ?? 0);
+  }, 0);
 
   const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
   const [showModal, setShowModal] = useState(false);
@@ -396,8 +443,8 @@ export default function LogPage() {
                   Rate Your Symptoms
                 </p>
                 <ConditionProgress
-                  total={groups.length}
-                  completed={completedConditions.size}
+                  total={totalSymptomCount}
+                  completed={loggedSymptomCount}
                 />
               </div>
               <p
@@ -438,7 +485,9 @@ export default function LogPage() {
               isCollapsed={isCollapsed}
               onToggle={() => toggleGroup(condition)}
               entries={entries}
+              activeSymptomIndex={activeSymptomIndex[condition] ?? 0}
               onEntryChange={handleEntryChange}
+              onSetActiveSymptomIndex={(i) => handleSetActiveSymptomIndex(condition, i)}
               justSaved={saveState === "saved"}
               entryIndex={index}
               complete={isComplete}

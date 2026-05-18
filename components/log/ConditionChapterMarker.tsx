@@ -137,28 +137,45 @@ export default function ConditionChapterMarker({
           </p>
         )}
 
-        {/* Nothing to report — quiet ghost button, hidden when complete */}
+        {/* Nothing to report — outlined button, hidden when complete */}
         {!complete && onNothingToReport && (
           <button
             type="button"
             onClick={onNothingToReport}
             className="tap-feedback"
             style={{
-              background: "none",
-              border: "none",
-              padding: "8px 4px",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "999px",
+              padding: "6px 12px",
               fontFamily: "var(--font-body)",
               fontSize: "12px",
               fontWeight: 500,
-              color: "var(--text-secondary)",
+              color: "var(--text-primary)",
               cursor: "pointer",
               WebkitTapHighlightColor: "transparent",
               whiteSpace: "nowrap",
               letterSpacing: "0.01em",
+              minHeight: "32px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1), border-color 200ms cubic-bezier(0.16,1,0.3,1)",
             }}
             aria-label={`Mark ${condition} as nothing to report`}
           >
-            Nothing to report
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <line
+                x1="2"
+                y1="5"
+                x2="8"
+                y2="5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+            Nothing today
           </button>
         )}
 
