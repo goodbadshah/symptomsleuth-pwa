@@ -85,9 +85,9 @@ export default function MurmurationBackground() {
       const targetY = height / 2 + Math.sin(time * 0.8) * (height * 0.35);
 
       particles.forEach((p, i) => {
-        let align = { x: 0, y: 0 };
-        let coh = { x: 0, y: 0 };
-        let sep = { x: 0, y: 0 };
+        const align = { x: 0, y: 0 };
+        const coh = { x: 0, y: 0 };
+        const sep = { x: 0, y: 0 };
         let count = 0;
 
         // O(N^2) naive loop is perfectly smooth in modern JS browsers at 800 particles
@@ -118,7 +118,7 @@ export default function MurmurationBackground() {
           // Alignment (Match velocity)
           align.x /= count;
           align.y /= count;
-          let alignMag = Math.sqrt(align.x * align.x + align.y * align.y);
+          const alignMag = Math.sqrt(align.x * align.x + align.y * align.y);
           if (alignMag > 0) {
             align.x = (align.x / alignMag) * maxSpeed - p.vx;
             align.y = (align.y / alignMag) * maxSpeed - p.vy;
@@ -130,7 +130,7 @@ export default function MurmurationBackground() {
           coh.y /= count;
           const cohDx = coh.x - p.x;
           const cohDy = coh.y - p.y;
-          let cohMag = Math.sqrt(cohDx * cohDx + cohDy * cohDy);
+          const cohMag = Math.sqrt(cohDx * cohDx + cohDy * cohDy);
           if (cohMag > 0) {
             coh.x = (cohDx / cohMag) * maxSpeed - p.vx;
             coh.y = (cohDy / cohMag) * maxSpeed - p.vy;
@@ -138,7 +138,7 @@ export default function MurmurationBackground() {
           }
 
           // Separation (Steer away from crowding)
-          let sepMag = Math.sqrt(sep.x * sep.x + sep.y * sep.y);
+          const sepMag = Math.sqrt(sep.x * sep.x + sep.y * sep.y);
           if (sepMag > 0) {
             sep.x = (sep.x / sepMag) * maxSpeed - p.vx;
             sep.y = (sep.y / sepMag) * maxSpeed - p.vy;
@@ -160,8 +160,8 @@ export default function MurmurationBackground() {
         const tDy = targetY - p.y;
         const tMag = Math.sqrt(tDx * tDx + tDy * tDy);
         if (tMag > 0) {
-          let pullX = (tDx / tMag) * maxSpeed - p.vx;
-          let pullY = (tDy / tMag) * maxSpeed - p.vy;
+          const pullX = (tDx / tMag) * maxSpeed - p.vx;
+          const pullY = (tDy / tMag) * maxSpeed - p.vy;
           const pullVec = { x: pullX, y: pullY };
           limit(pullVec, maxForce * 0.15); // Very weak gravitational pull
           p.ax += pullVec.x;

@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Symptom } from "@/app/providers";
 import SeverityChipSelector from "./SeverityChipSelector";
 import Marginalia from "./Marginalia";
 import { SeverityGlyph } from "@/utils/severityGlyphs";
+import { motion, AnimatePresence } from "framer-motion";
 
 const CHIP_LABELS = ["None", "Mild", "Medium", "Severe", "Extreme"];
+
+// Safe haptic wrapper
+const vibrate = (pattern: number | number[]) => {
+  if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+    try {
+      window.navigator.vibrate(pattern);
+    } catch (e) {
+      // Ignore
+    }
+  }
+};
 
 interface Props {
   groupSymptoms: Symptom[];
@@ -45,29 +57,35 @@ export default function SymptomWizard({
         const isDone = complete || index < activeIndex;
         const isUpcoming = !complete && index > activeIndex;
 
-        if (isActive) {
-          return (
-            <ActiveRow
-              key={symptom.id}
-              symptom={symptom}
-              value={value}
-              onChange={(v) => onEntryChange(symptom.id, v)}
-              justSaved={justSaved}
-              positionLabel={`${index + 1} of ${groupSymptoms.length}`}
-            />
-          );
-        }
-
         return (
-          <CompactRow
+          <motion.div
             key={symptom.id}
-            symptom={symptom}
-            value={value}
-            state={isDone ? "done" : "upcoming"}
-            onJump={() => onSetActiveIndex(index)}
-            isLast={index === groupSymptoms.length - 1}
-            showUpNextLabel={isUpcoming && index === activeIndex + 1}
-          />
+            layout
+            initial={false}
+            transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+          >
+            {isActive ? (
+              <ActiveRow
+                symptom={symptom}
+                value={value}
+                onChange={(v) => {
+                  vibrate(10);
+                  onEntryChange(symptom.id, v);
+                }}
+                justSaved={justSaved}
+                positionLabel={`${index + 1} of ${groupSymptoms.length}`}
+              />
+            ) : (
+              <CompactRow
+                symptom={symptom}
+                value={value}
+                state={isDone ? "done" : "upcoming"}
+                onJump={() => onSetActiveIndex(index)}
+                isLast={index === groupSymptoms.length - 1}
+                showUpNextLabel={isUpcoming && index === activeIndex + 1}
+              />
+            )}
+          </motion.div>
         );
       })}
     </div>
@@ -89,8 +107,41 @@ function ActiveRow({
   justSaved: boolean;
   positionLabel: string;
 }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // The "Typewriter" Auto-Scroll
+    // Wait for the Framer Motion layout animation to settle before calculating coordinates
+    const t = setTimeout(() => {
+      if (rowRef.current) {
+        const _container = rowRef.current.closest(".overflow-y-auto") as HTMLElement | null;
+        if (_container) {
+          const rect = rowRef.current.getBoundingClientRect();
+          const containerRect = _container.getBoundingClientRect();
+          const viewportHeight = _container.clientHeight;
+          
+          // Unconditionally scroll the newly active row into the "focus zone" (upper-mid screen). 
+          // This acts like a treadmill—pulling the next row up to exactly where the user is already tapping.
+          const currentScroll = _container.scrollTop;
+          const targetY = currentScroll + (rect.top - containerRect.top) - (viewportHeight * 0.35);
+          
+          _container.scrollTo({ top: targetY, behavior: "smooth" });
+        } else {
+          // Fallback if container not found
+          const rect = rowRef.current.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const targetY = window.scrollY + rect.top - viewportHeight * 0.35;
+          window.scrollTo({ top: targetY, behavior: "smooth" });
+        }
+      }
+    }, 450); // framer-motion transition is 400ms
+
+    return () => clearTimeout(t);
+  }, [symptom.id]);
+
   return (
     <div
+      ref={rowRef}
       style={{
         position: "relative",
         display: "flex",
@@ -125,10 +176,10 @@ function ActiveRow({
           margin: "0 0 10px",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
           <p
             style={{
-              fontSize: "10px",
+              fontSize: "12px",
               fontFamily: "var(--font-mono)",
               color: "var(--text-secondary)",
               letterSpacing: "0.05em",
@@ -141,7 +192,7 @@ function ActiveRow({
           </p>
           <p
             style={{
-              fontSize: "16px",
+              fontSize: "20px",
               fontWeight: 500,
               lineHeight: "1.3",
               color: "var(--text-primary)",
@@ -186,7 +237,9 @@ function CompactRow({
   const isDone = state === "done";
 
   const nameColor = isDone ? "var(--text-primary)" : "var(--text-secondary)";
-  const opacity = isDone ? 1 : 0.55;
+  const opacity = isDone ? 1 : 0.6;
+  const scale = isDone ? 1 : 0.98;
+  const filter = isDone ? "none" : "blur(0.5px)";
   const valueLabel = value > 0 ? CHIP_LABELS[value] : isDone ? "None" : "";
 
   return (
@@ -215,13 +268,16 @@ function CompactRow({
         textAlign: "left",
         WebkitTapHighlightColor: "transparent",
         opacity,
-        transition: "opacity 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1)",
+        transform: `scale(${scale})`,
+        filter,
+        transformOrigin: "left center",
+        transition: "opacity 300ms ease, transform 300ms cubic-bezier(0.16,1,0.3,1), filter 300ms ease, background-color 200ms ease",
         minHeight: "44px",
       }}
     >
       <p
         style={{
-          fontSize: "14px",
+          fontSize: "16px",
           fontWeight: 400,
           color: nameColor,
           fontFamily: "var(--font-body)",
@@ -241,10 +297,10 @@ function CompactRow({
             color: value > 0 ? "var(--text-primary)" : "var(--text-secondary)",
           }}
         >
-          <SeverityGlyph value={value} size={12} />
+          <SeverityGlyph value={value} size={14} />
           <span
             style={{
-              fontSize: "11px",
+              fontSize: "13px",
               fontFamily: "var(--font-mono)",
               color: "var(--text-secondary)",
               letterSpacing: "0.03em",
@@ -258,7 +314,7 @@ function CompactRow({
       ) : (
         <span
           style={{
-            fontSize: "11px",
+            fontSize: "12px",
             fontFamily: "var(--font-mono)",
             color: "var(--text-secondary)",
             letterSpacing: "0.05em",

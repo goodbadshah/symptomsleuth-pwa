@@ -265,6 +265,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (stored) {
       dispatch({ type: "HYDRATE", payload: stored });
     }
+     
     setHydrated(true);
   }, []);
 

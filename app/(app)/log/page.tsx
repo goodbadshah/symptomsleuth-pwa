@@ -100,6 +100,7 @@ function SymptomGroup({
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
+      id={`condition-group-${condition}`}
       style={{
         ...entryStyle(inView, entryIndex),
         display: "flex",
@@ -244,6 +245,12 @@ export default function LogPage() {
    * Triggered by a chip commit that pushes the last symptom in the group above 0.
    */
   function advanceFromCondition(condition: string) {
+    if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+      try {
+        window.navigator.vibrate([15, 30, 20]);
+      } catch(e) {}
+    }
+
     setJustCompletedCondition(condition);
     setCompletedConditions((prev) => {
       if (prev.has(condition)) return prev;
@@ -260,7 +267,28 @@ export default function LogPage() {
           const nextGroup = groups.find(
             (g) => g.condition !== condition && !doneSet.has(g.condition)
           );
-          if (nextGroup) nextCollapsed.delete(nextGroup.condition);
+          if (nextGroup) {
+            nextCollapsed.delete(nextGroup.condition);
+            // Smooth scroll to the next group after the accordion finishes animating (400ms)
+            window.setTimeout(() => {
+              const el = document.getElementById(`condition-group-${nextGroup.condition}`);
+              if (el) {
+                const _container = el.closest(".overflow-y-auto") as HTMLElement | null;
+                if (_container) {
+                  const headerOffset = 180; // sticky header height
+                  const elementPosition = el.getBoundingClientRect().top;
+                  const containerPosition = _container.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition - containerPosition + _container.scrollTop - headerOffset;
+                  _container.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                } else {
+                  const headerOffset = 180;
+                  const elementPosition = el.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                  window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                }
+              }
+            }, 400);
+          }
           return doneSet;
         });
         return nextCollapsed;
@@ -369,7 +397,7 @@ export default function LogPage() {
   }, [symptoms, entries, context, note, today, dispatch, communityOptIn]);
 
   return (
-    <div style={{ minHeight: "100dvh", paddingBottom: "96px" }}>
+    <div style={{ minHeight: "100dvh", paddingBottom: "50vh" }}>
       {/* Sticky Header Box */}
       <div 
         className="sticky top-0 z-20"

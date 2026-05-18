@@ -257,7 +257,7 @@ export default function SeverityChipSelector({
                   <GlyphComp size={12} />
                   <span
                     style={{
-                      fontSize: "12px",
+                      fontSize: "14px",
                       fontFamily: "var(--font-body)",
                       fontWeight: selected ? 600 : 500,
                       lineHeight: 1.1,

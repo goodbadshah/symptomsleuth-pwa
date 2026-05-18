@@ -16,6 +16,7 @@ export interface TrialStatus {
 export function useTrial(): TrialStatus {
   const { state } = useAppState();
   const { profile } = state;
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
   // Lifetime never expires

@@ -24,6 +24,7 @@ export default function SymptomRow({
         display: "flex",
         flexDirection: "column",
         padding: "16px 16px 14px",
+        margin: "0 -16px",
         borderBottom: "1px solid var(--border)",
         backgroundColor: "var(--bg-surface)",
       }}

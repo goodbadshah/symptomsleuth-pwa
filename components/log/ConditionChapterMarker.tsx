@@ -85,36 +85,67 @@ export default function ConditionChapterMarker({
           : undefined,
       }}
     >
+      {/* LAYER A: Sticky Anchor */}
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "14px 16px",
-          minHeight: "52px",
-          gap: "12px",
+          position: "sticky",
+          top: "-1px",
+          zIndex: 30,
+          background: "var(--bg-primary)",
+          // We add a tiny bit of bottom margin/padding so it has breathing room while sticky
+          paddingBottom: "8px",
+          margin: "0 -16px", // pull out to match page padding so background covers full bleed if needed
+          paddingLeft: "16px",
+          paddingRight: "16px",
         }}
       >
-        {onToggle ? (
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={!collapsed}
-            className="tap-feedback"
-            style={{
-              flex: 1,
-              display: "block",
-              textAlign: "left",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              minHeight: "24px",
-              WebkitTapHighlightColor: "transparent",
-            }}
-          >
-            <p
-              className="text-base font-medium"
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "14px 0px", // adjusted side padding because of negative margin above
+            minHeight: "52px",
+            gap: "12px",
+          }}
+        >
+          {onToggle ? (
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-expanded={!collapsed}
+              className="tap-feedback"
               style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                textAlign: "left",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "6px",
+                margin: "-6px", // expand tap target safely around text
+                minHeight: "44px",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <p
+                className="text-lg font-medium"
+                style={{
+                  color: "var(--text-primary)",
+                  fontFamily: "var(--font-body)",
+                  margin: 0,
+                }}
+              >
+                {condition}
+              </p>
+              {!complete && chevron}
+            </button>
+          ) : (
+            <p
+              className="text-lg font-medium"
+              style={{
+                flex: 1,
                 color: "var(--text-primary)",
                 fontFamily: "var(--font-body)",
                 margin: 0,
@@ -122,113 +153,101 @@ export default function ConditionChapterMarker({
             >
               {condition}
             </p>
-          </button>
-        ) : (
-          <p
-            className="text-base font-medium"
-            style={{
-              flex: 1,
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-body)",
-              margin: 0,
-            }}
-          >
-            {condition}
-          </p>
-        )}
+          )}
 
-        {/* Nothing to report — outlined button, hidden when complete */}
-        {!complete && onNothingToReport && (
-          <button
-            type="button"
-            onClick={onNothingToReport}
-            className="tap-feedback"
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "999px",
-              padding: "6px 12px",
-              fontFamily: "var(--font-body)",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "var(--text-primary)",
-              cursor: "pointer",
-              WebkitTapHighlightColor: "transparent",
-              whiteSpace: "nowrap",
-              letterSpacing: "0.01em",
-              minHeight: "32px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1), border-color 200ms cubic-bezier(0.16,1,0.3,1)",
-            }}
-            aria-label={`Mark ${condition} as nothing to report`}
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-              <line
-                x1="2"
-                y1="5"
-                x2="8"
-                y2="5"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-            Nothing today
-          </button>
-        )}
+          {complete && completeBadge}
+          
+          {onToggle && complete && (
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-label={collapsed ? "Expand" : "Collapse"}
+              aria-expanded={!collapsed}
+              className="tap-feedback"
+              style={{
+                background: "none",
+                border: "none",
+                padding: "6px",
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {chevron}
+            </button>
+          )}
+        </div>
 
-        {complete && completeBadge}
-
-        {onToggle && (
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-label={collapsed ? "Expand" : "Collapse"}
-            aria-expanded={!collapsed}
-            className="tap-feedback"
+        {collapsed && previewValues && previewValues.length > 0 && (
+          <div
             style={{
-              background: "none",
-              border: "none",
-              padding: "6px",
-              cursor: "pointer",
-              WebkitTapHighlightColor: "transparent",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              gap: "10px",
+              padding: "0 0px 14px",
             }}
           >
-            {chevron}
-          </button>
+            {previewValues.slice(0, 5).map((v, i) => (
+              <span
+                key={i}
+                style={{
+                  color:
+                    v > 0 ? "var(--text-primary)" : "var(--text-secondary)",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <SeverityGlyph value={v} size={14} />
+              </span>
+            ))}
+          </div>
+        )}
+
+        {onNothingToReport && !complete && !collapsed && (
+          <div style={{ marginBottom: "8px", marginTop: "4px" }}>
+            <button
+              type="button"
+              onClick={onNothingToReport}
+              className="tap-feedback"
+              style={{
+                width: "100%",
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "12px",
+                padding: "10px",
+                fontFamily: "var(--font-body)",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "var(--text-secondary)",
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                transition: "all 200ms cubic-bezier(0.16,1,0.3,1)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--text-primary)";
+                e.currentTarget.style.borderColor = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.borderColor = "var(--border)";
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                <line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Nothing today
+            </button>
+          </div>
         )}
       </div>
 
-      {collapsed && previewValues && previewValues.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            padding: "0 16px 14px",
-          }}
-        >
-          {previewValues.slice(0, 5).map((v, i) => (
-            <span
-              key={i}
-              style={{
-                color:
-                  v > 0 ? "var(--text-primary)" : "var(--text-secondary)",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <SeverityGlyph value={v} size={14} />
-            </span>
-          ))}
-        </div>
-      )}
-
+      {/* LAYER B: The Conveyor (Symptom Feed) */}
       <div
         style={{
           display: "grid",
