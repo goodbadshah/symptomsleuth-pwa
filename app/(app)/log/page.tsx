@@ -275,13 +275,13 @@ export default function LogPage() {
               if (el) {
                 const _container = el.closest(".overflow-y-auto") as HTMLElement | null;
                 if (_container) {
-                  const headerOffset = 180; // sticky header height
+                  const headerOffset = headerHeight ? headerHeight + 64 : 180; // dynamic sticky header height + collapsed chapter height
                   const elementPosition = el.getBoundingClientRect().top;
                   const containerPosition = _container.getBoundingClientRect().top;
                   const offsetPosition = elementPosition - containerPosition + _container.scrollTop - headerOffset;
                   _container.scrollTo({ top: offsetPosition, behavior: "smooth" });
                 } else {
-                  const headerOffset = 180;
+                  const headerOffset = headerHeight ? headerHeight + 64 : 180;
                   const elementPosition = el.getBoundingClientRect().top;
                   const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                   window.scrollTo({ top: offsetPosition, behavior: "smooth" });
@@ -289,17 +289,23 @@ export default function LogPage() {
               }
             }, 400);
           } else {
-            // All conditions are completed; scroll to Food Triggers
+            // All conditions are completed; scroll to the condition we just finished
+            // This ensures its sticky header stays pinned correctly and Dietary Intake naturally appears beneath it.
             window.setTimeout(() => {
-              const el = document.getElementById("food-triggers-section");
+              const el = document.getElementById(`condition-group-${condition}`);
               if (el) {
                 const _container = el.closest(".overflow-y-auto") as HTMLElement | null;
                 if (_container) {
-                  const headerOffset = 88; // just enough offset so Food Triggers shows nicely
+                  const headerOffset = headerHeight || 180; 
                   const elementPosition = el.getBoundingClientRect().top;
                   const containerPosition = _container.getBoundingClientRect().top;
                   const offsetPosition = elementPosition - containerPosition + _container.scrollTop - headerOffset;
                   _container.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                } else {
+                  const headerOffset = headerHeight || 180;
+                  const elementPosition = el.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                  window.scrollTo({ top: offsetPosition, behavior: "smooth" });
                 }
               }
             }, 400);
@@ -554,7 +560,7 @@ export default function LogPage() {
         })}
       </div>
 
-      {/* Food Triggers */}
+      {/* Dietary Intake */}
       <div id="food-triggers-section" className="my-2" style={{ margin: "0 -16px" }}>
         <FoodTriggers value={context} onChange={setContext} />
       </div>

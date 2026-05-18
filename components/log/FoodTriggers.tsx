@@ -67,24 +67,9 @@ export default function FoodTriggers({ value, onChange }: Props) {
               className="text-base font-medium"
               style={{ color: "var(--text-primary)", fontFamily: "var(--font-body)" }}
             >
-              Food Triggers
+              Dietary Intake
             </p>
-            {/* Eyebrow pill - optional */}
-            <span
-              className="inline-flex items-center rounded-full"
-              style={{
-                padding: "2px 8px",
-                fontSize: "10px",
-                fontFamily: "var(--font-body)",
-                fontWeight: 500,
-                textTransform: "uppercase",
-                letterSpacing: "0.15em",
-                backgroundColor: "var(--accent-light)",
-                color: "var(--accent)",
-              }}
-            >
-              Optional
-            </span>
+            
           </div>
           <span
             aria-hidden="true"
@@ -131,7 +116,7 @@ export default function FoodTriggers({ value, onChange }: Props) {
                   marginBottom: "10px",
                 }}
               >
-                Select anything you ate today.
+                Select any categories you consumed today.
               </p>
               {/* 2-column chip grid - same pattern as onboarding ConditionSelect */}
               <div className="grid grid-cols-2 gap-2">
