@@ -253,17 +253,17 @@ function CompactRow({
   const hasSeverity = isDone && value !== undefined && value >= 0;
   const displayValue = Math.min(value ?? 0, 4);
 
-  const SOLID_BGS = [
-    "var(--severity-1)",
-    "var(--severity-2)",
-    "var(--severity-3)",
-    "var(--severity-4)",
-    "var(--severity-5)"
-  ];
+    const SOLID_BGS = [
+      "var(--severity-1)",
+      "var(--severity-2)",
+      "var(--severity-3)",
+      "var(--severity-4)",
+      "#6A0DAD"
+    ];
 
-  const bgColor = hasSeverity 
-    ? SOLID_BGS[displayValue]
-    : hover ? "rgba(0,0,0,0.015)" : "transparent";
+    const bgColor = hasSeverity
+      ? SOLID_BGS[displayValue]
+      : hover ? "rgba(0,0,0,0.015)" : "transparent";
 
   const nameColor = hasSeverity 
     ? "#ffffff" 

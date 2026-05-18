@@ -71,9 +71,9 @@ const SEVERITY_CHIPS: ChipDef[] = [
   {
     label: "Extreme",
     value: 4,
-    selectedBg: "var(--severity-5)",
+    selectedBg: "#6A0DAD",
     defaultBg: "rgba(106, 13, 173, 0.25)", /* Purple */
-    selectedBorder: "var(--severity-5)",
+    selectedBorder: "#6A0DAD",
     selectedText: "#ffffff",
   },
 ];
@@ -91,7 +91,7 @@ const GLOW_COLORS = {
   1: "var(--severity-2)",
   2: "var(--severity-3)",
   3: "var(--severity-4)",
-  4: "var(--severity-5)",
+  4: "#6A0DAD",
 };
 
 // ── Props ─────────────────────────────────────────────────────────────────────
