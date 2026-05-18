@@ -35,14 +35,17 @@ export function useInView(options?: IntersectionObserverInit) {
  * Apply to each item; pass `index` for stagger (100ms per item).
  */
 export function entryStyle(inView: boolean, index = 0): React.CSSProperties {
+  if (inView) {
+    // When in view, we drop transform/filter entirely so we don't accidentally
+    // create a CSS containing block which breaks position: sticky for children.
+    return {
+      opacity: 1,
+      transition: `opacity 600ms cubic-bezier(0.32,0.72,0,1) ${index * 100}ms`,
+    };
+  }
   return {
-    transform: inView ? "translateY(0)" : "translateY(2rem)",
-    filter: inView ? "blur(0px)" : "blur(4px)",
-    opacity: inView ? 1 : 0,
-    transition: [
-      `transform 600ms cubic-bezier(0.32,0.72,0,1) ${index * 100}ms`,
-      `filter 600ms cubic-bezier(0.32,0.72,0,1) ${index * 100}ms`,
-      `opacity 600ms cubic-bezier(0.32,0.72,0,1) ${index * 100}ms`,
-    ].join(", "),
+    transform: "translateY(2rem)",
+    opacity: 0,
+    transition: "none",
   };
 }

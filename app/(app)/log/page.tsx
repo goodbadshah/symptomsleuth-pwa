@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAppState } from "@/app/providers";
 import type { DailyLog, DailyContext, SymptomEntry, Symptom } from "@/app/providers";
 import ContextFields from "@/components/log/ContextFields";
@@ -380,6 +380,18 @@ export default function LogPage() {
   const [currentMessage, setCurrentMessage] = useState<LogMessage | null>(null);
   const { count: streak } = useStreak();
 
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const headerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      // get the rendered height of the date/rate banner
+      setHeaderHeight(entries[0].target.getBoundingClientRect().height);
+    });
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const handleSave = useCallback(() => {
     const entryList: SymptomEntry[] = symptoms
       .map((s) => ({ symptomId: s.id, value: entries[s.id] ?? 0 }))
@@ -412,10 +424,11 @@ export default function LogPage() {
   }, [symptoms, entries, context, note, today, dispatch, communityOptIn]);
 
   return (
-    <div style={{ minHeight: "100dvh", paddingBottom: "50vh" }}>
+    <div style={{ minHeight: "100dvh", paddingBottom: "50vh", "--sticky-offset": headerHeight ? `${headerHeight}px` : "150px" } as React.CSSProperties}>
       {/* Sticky Header Box */}
       <div 
-        className="sticky top-0 z-20"
+        ref={headerRef}
+        className="sticky top-0 z-40" 
         style={{
           background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.03) 20%, rgba(0,0,0,0) 100%), var(--bg-primary)",
           borderBottom: "1px solid var(--border)",
