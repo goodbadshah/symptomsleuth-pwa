@@ -107,6 +107,7 @@ interface Props {
    * 'context': all chips use neutral --context-slider-high palette.
    */
   scale?: "severity" | "context";
+  customLabels?: string[];
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -116,6 +117,7 @@ export default function SeverityChipSelector({
   onChange,
   label = "Severity",
   scale = "severity",
+  customLabels,
 }: Props) {
   const displayValue = value === undefined ? undefined : Math.min(value, 4);
 
@@ -166,7 +168,7 @@ export default function SeverityChipSelector({
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={chip.label}
+              aria-label={customLabels ? customLabels[index] : chip.label}
               onClick={() => handleChipPress(chip.value)}
               initial="rest"
               whileHover="hover"

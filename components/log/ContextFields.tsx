@@ -102,9 +102,10 @@ export default function ContextFields({
             overflow: "hidden",
           }}
         >
-          <div style={{ minHeight: 0, paddingLeft: "16px", paddingRight: "16px", paddingBottom: "20px" }}>
-            {/* Left-border accent grouping - secondary visual hierarchy */}
-            <div
+          <div style={{ minHeight: 0 }}>
+            <div style={{ paddingLeft: "16px", paddingRight: "16px", paddingBottom: "20px" }}>
+              {/* Left-border accent grouping - secondary visual hierarchy */}
+              <div
               style={{
                 marginLeft: "16px",
                 marginRight: "16px",
@@ -118,6 +119,7 @@ export default function ContextFields({
                   value={value.sleepQuality ?? 0}
                   onChange={(v) => set("sleepQuality", v === 0 ? undefined : v)}
                   label="Sleep quality"
+                  customLabels={["Skip", "Poor", "Fair", "Good", "Great"]}
                 />
               </ChipContextRow>
 
@@ -126,6 +128,7 @@ export default function ContextFields({
                   value={value.stressLevel ?? 0}
                   onChange={(v) => set("stressLevel", v === 0 ? undefined : v)}
                   label="Stress level"
+                  customLabels={["Skip", "Low", "Medium", "High", "Extreme"]}
                 />
               </ChipContextRow>
 
@@ -165,6 +168,7 @@ export default function ContextFields({
                   />
                 </ContextRow>
               )}
+              </div>
             </div>
           </div>
         </div>
