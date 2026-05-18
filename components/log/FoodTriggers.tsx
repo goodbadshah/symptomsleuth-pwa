@@ -9,9 +9,14 @@ const FOOD_TRIGGERS = [
   "Alcohol",
   "Caffeine",
   "High Sugar",
+  "High Sodium",
+  "High FODMAPs",
+  "Histamine",
+  "Tyramine",
+  "Nightshades",
+  "PODS",
   "Processed Food",
   "Cruciferous Veg",
-  "Nightshades",
   "Alliums (Onion/Garlic)",
   "Legumes",
   "Soy",
@@ -126,52 +131,56 @@ export default function FoodTriggers({ value, onChange }: Props) {
                 Select any categories you consumed today.
               </p>
               {/* 2-column chip grid - same pattern as onboarding ConditionSelect */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="flex flex-wrap gap-2">
                 {FOOD_TRIGGERS.map((trigger) => {
                   const isSelected = selected.has(trigger);
                   return (
                     <button
                       key={trigger}
                       onClick={() => toggle(trigger)}
-                      className="w-full active:scale-[0.98] group relative"
+                      className="active:scale-[0.98] group flex-none relative"
                       style={{
-                        padding: "8px",
-                        borderRadius: "1.5rem",
+                        height: "56px",
+                        padding: "3px",
+                        borderRadius: "12px",
                         boxShadow: isSelected
-                          ? "0 0 0 1px var(--accent)"
+                          ? "0 0 0 1px var(--bg-primary), 0 0 0 2.5px var(--accent)"
                           : "0 0 0 1px var(--bezel-ring)",
                         backgroundColor: isSelected
-                          ? "calc(var(--accent) * 0.9)" // slightly different outer
+                          ? "var(--bg-primary)"
                           : "var(--bezel-outer-bg)",
                         transition:
                           "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1), transform 150ms",
                         cursor: "pointer",
                         border: "none",
+                        outline: "none",
+                        WebkitTapHighlightColor: "transparent",
                       }}
                       aria-pressed={isSelected}
                     >
                       {/* Inner core */}
                       <div
-                        className="flex items-center justify-center text-center relative overflow-hidden"
+                        className="flex items-center justify-center relative overflow-hidden"
                         style={{
-                          padding: "16px 20px",
-                          backgroundColor: isSelected
-                          ? "var(--accent)"
-                          : "var(--bg-surface)",
-                          boxShadow: isSelected ? "none" : "var(--bezel-inset-shadow)",
-                          borderRadius: "1rem",
-                          minHeight: "64px",
+                          height: "100%",
+                          padding: "0 16px",
+                          backgroundColor: isSelected ? "var(--accent)" : "var(--bg-surface)",
+                          color: isSelected ? "#ffffff" : "var(--text-secondary)",
+                          boxShadow: "var(--bezel-inset-shadow)",
+                          borderRadius: "9px",
                           transition:
-                            "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
+                            "background-color 200ms cubic-bezier(0.16,1,0.3,1), color 200ms cubic-bezier(0.16,1,0.3,1)",
                         }}
                       >
                         <span
-                          className="text-base font-medium leading-snug relative z-10"
                           style={{
-                            color: isSelected ? "#ffffff" : "var(--text-primary)",
+                            fontSize: "14px",
                             fontFamily: "var(--font-body)",
-                            transition:
-                              "color 200ms cubic-bezier(0.16,1,0.3,1)",
+                            fontWeight: isSelected ? 600 : 500,
+                            lineHeight: 1.1,
+                            whiteSpace: "nowrap",
+                            position: "relative",
+                            zIndex: 10,
                           }}
                         >
                           {trigger}
