@@ -40,7 +40,7 @@ const SEVERITY_CHIPS: ChipDef[] = [
     label: "None",
     value: 0,
     selectedBg: "var(--severity-1)",
-    defaultBg: "rgba(0, 163, 108, 0.25)", /* Rich Green */
+    defaultBg: "rgba(0, 163, 108, 0.45)", /* Rich Green */
     selectedBorder: "var(--severity-1)",
     selectedText: "#ffffff",
   },
@@ -48,7 +48,7 @@ const SEVERITY_CHIPS: ChipDef[] = [
     label: "Mild",
     value: 1,
     selectedBg: "var(--severity-2)",
-    defaultBg: "rgba(255, 182, 0, 0.25)", /* Rich Gold */
+    defaultBg: "rgba(255, 182, 0, 0.45)", /* Rich Gold */
     selectedBorder: "var(--severity-2)",
     selectedText: "#ffffff",
   },
@@ -56,7 +56,7 @@ const SEVERITY_CHIPS: ChipDef[] = [
     label: "Medium",
     value: 2,
     selectedBg: "var(--severity-3)",
-    defaultBg: "rgba(249, 87, 0, 0.25)", /* Rich Orange */
+    defaultBg: "rgba(249, 87, 0, 0.45)", /* Rich Orange */
     selectedBorder: "var(--severity-3)",
     selectedText: "#ffffff",
   },
@@ -64,7 +64,7 @@ const SEVERITY_CHIPS: ChipDef[] = [
     label: "Severe",
     value: 3,
     selectedBg: "var(--severity-4)",
-    defaultBg: "rgba(230, 0, 0, 0.25)", /* Rich Red */
+    defaultBg: "rgba(230, 0, 0, 0.45)", /* Rich Red */
     selectedBorder: "var(--severity-4)",
     selectedText: "#ffffff",
   },
@@ -72,7 +72,7 @@ const SEVERITY_CHIPS: ChipDef[] = [
     label: "Extreme",
     value: 4,
     selectedBg: "#6A0DAD",
-    defaultBg: "rgba(106, 13, 173, 0.25)", /* Purple */
+    defaultBg: "rgba(106, 13, 173, 0.45)", /* Purple */
     selectedBorder: "#6A0DAD",
     selectedText: "#ffffff",
   },
