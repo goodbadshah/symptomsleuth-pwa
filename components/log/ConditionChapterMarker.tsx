@@ -213,14 +213,14 @@ export default function ConditionChapterMarker({
               className="tap-feedback"
               style={{
                 width: "100%",
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border)",
+                background: "var(--severity-1)",
+                border: "1px solid var(--severity-1)",
                 borderRadius: "12px",
                 padding: "10px",
                 fontFamily: "var(--font-body)",
                 fontSize: "14px",
                 fontWeight: 500,
-                color: "var(--accent)",
+                color: "#ffffff",
                 cursor: "pointer",
                 WebkitTapHighlightColor: "transparent",
                 display: "flex",
@@ -230,12 +230,10 @@ export default function ConditionChapterMarker({
                 transition: "all 200ms cubic-bezier(0.16,1,0.3,1)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--accent)";
-                e.currentTarget.style.borderColor = "var(--accent)";
+                e.currentTarget.style.transform = "scale(0.98)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--accent)";
-                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.transform = "scale(1)";
               }}
             >
               <svg width="12" height="12" viewBox="0 0 10 10" fill="none" aria-hidden="true">
