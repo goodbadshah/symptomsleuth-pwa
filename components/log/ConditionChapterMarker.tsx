@@ -194,8 +194,8 @@ export default function ConditionChapterMarker({
               <span
                 key={i}
                 style={{
-                  backgroundColor: `var(--severity-${v + 1})`,
-                  color: "#ffffff",
+                  backgroundColor: v === 0 ? "rgba(0, 163, 108, 0.25)" : `var(--severity-${v + 1})`,
+                  color: v === 0 ? "var(--severity-1)" : "#ffffff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
