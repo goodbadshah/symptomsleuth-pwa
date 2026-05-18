@@ -89,7 +89,7 @@ export default function ConditionChapterMarker({
       <div
         style={{
           position: "sticky",
-          top: "-1px",
+          top: "71px",
           zIndex: 30,
           background: "var(--bg-primary)",
           // We add a tiny bit of bottom margin/padding so it has breathing room while sticky

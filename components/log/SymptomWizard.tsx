@@ -120,17 +120,30 @@ function ActiveRow({
           const containerRect = _container.getBoundingClientRect();
           const viewportHeight = _container.clientHeight;
           
-          // Unconditionally scroll the newly active row into the "focus zone" (upper-mid screen). 
-          // This acts like a treadmill—pulling the next row up to exactly where the user is already tapping.
+          // Gentle Bounds Check Scroll
+          // Ensure the newly active row is comfortably visible, but do not jerk it unconditionally.
+          const headerHeight = 160; // 72px AppHeader + ~88px Condition Header
           const currentScroll = _container.scrollTop;
-          const targetY = currentScroll + (rect.top - containerRect.top) - (viewportHeight * 0.35);
+          const relativeTop = rect.top - containerRect.top;
+          const relativeBottom = rect.bottom - containerRect.top;
           
-          _container.scrollTo({ top: targetY, behavior: "smooth" });
+          let targetY = currentScroll;
+          if (relativeTop < headerHeight) {
+            // Pushed under the sticky header
+            targetY = currentScroll + relativeTop - headerHeight - 20;
+          } else if (relativeBottom > viewportHeight - 64) {
+            // Falling off the bottom
+            targetY = currentScroll + relativeBottom - viewportHeight + 96;
+          }
+          
+          if (targetY !== currentScroll) {
+            _container.scrollTo({ top: targetY, behavior: "smooth" });
+          }
         } else {
           // Fallback if container not found
           const rect = rowRef.current.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
-          const targetY = window.scrollY + rect.top - viewportHeight * 0.35;
+          const targetY = window.scrollY + rect.top - 160;
           window.scrollTo({ top: targetY, behavior: "smooth" });
         }
       }

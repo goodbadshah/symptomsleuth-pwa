@@ -288,6 +288,21 @@ export default function LogPage() {
                 }
               }
             }, 400);
+          } else {
+            // All conditions are completed; scroll to Food Triggers
+            window.setTimeout(() => {
+              const el = document.getElementById("food-triggers-section");
+              if (el) {
+                const _container = el.closest(".overflow-y-auto") as HTMLElement | null;
+                if (_container) {
+                  const headerOffset = 88; // just enough offset so Food Triggers shows nicely
+                  const elementPosition = el.getBoundingClientRect().top;
+                  const containerPosition = _container.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition - containerPosition + _container.scrollTop - headerOffset;
+                  _container.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                }
+              }
+            }, 400);
           }
           return doneSet;
         });
@@ -527,7 +542,7 @@ export default function LogPage() {
       </div>
 
       {/* Food Triggers */}
-      <div className="my-2" style={{ margin: "0 -16px" }}>
+      <div id="food-triggers-section" className="my-2" style={{ margin: "0 -16px" }}>
         <FoodTriggers value={context} onChange={setContext} />
       </div>
 
