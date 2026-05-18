@@ -194,7 +194,7 @@ export default function ConditionChapterMarker({
               <span
                 key={i}
                 style={{
-                  backgroundColor: v === 0 ? "rgba(0, 163, 108, 0.25)" : `var(--severity-${v + 1})`,
+                  backgroundColor: v === 0 ? "rgba(0, 163, 108, 0.45)" : `var(--severity-${v + 1})`,
                   color: v === 0 ? "var(--severity-1)" : "#ffffff",
                   display: "flex",
                   alignItems: "center",
@@ -219,7 +219,7 @@ export default function ConditionChapterMarker({
               className="tap-feedback"
               style={{
                 width: "100%",
-                background: "rgba(0, 163, 108, 0.25)",
+                background: "rgba(0, 163, 108, 0.45)",
                 border: "none",
                 borderRadius: "12px",
                 padding: "10px",
@@ -240,7 +240,7 @@ export default function ConditionChapterMarker({
                 e.currentTarget.style.color = "#ffffff";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(0, 163, 108, 0.25)";
+                e.currentTarget.style.backgroundColor = "rgba(0, 163, 108, 0.45)";
                 e.currentTarget.style.color = "var(--text-secondary)";
               }}
             >
