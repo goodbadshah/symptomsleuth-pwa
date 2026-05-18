@@ -22,7 +22,7 @@ const vibrate = (pattern: number | number[]) => {
 
 interface Props {
   groupSymptoms: Symptom[];
-  entries: Record<string, number>;
+  entries: Record<string, number | undefined>;
   /** Index of the active symptom within groupSymptoms. */
   activeIndex: number;
   onEntryChange: (symptomId: string, value: number) => void;
