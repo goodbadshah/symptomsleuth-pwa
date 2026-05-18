@@ -238,9 +238,6 @@ export default function ConditionChapterMarker({
                 e.currentTarget.style.color = "var(--text-secondary)";
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                <line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
               No symptoms today
             </button>
           </div>
