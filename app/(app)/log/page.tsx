@@ -13,6 +13,7 @@ import SaveConfirmModal from "@/components/log/SaveConfirmModal";
 import { pickRandomMessage } from "@/utils/logMessages";
 import type { LogMessage } from "@/utils/logMessages";
 import ConditionChapterMarker from "@/components/log/ConditionChapterMarker";
+import ConditionProgress from "@/components/log/ConditionProgress";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────────────────
 
@@ -68,23 +69,27 @@ interface ConditionGroup {
 function SymptomGroup({
   condition,
   groupSymptoms,
-  useGrouping,
   isCollapsed,
   onToggle,
   entries,
   onEntryChange,
   justSaved,
   entryIndex,
+  complete,
+  justCompleted,
+  onNothingToReport,
 }: {
   condition: string;
   groupSymptoms: Symptom[];
-  useGrouping: boolean;
   isCollapsed: boolean;
   onToggle: () => void;
   entries: EntryMap;
   onEntryChange: (id: string, v: number) => void;
   justSaved: boolean;
   entryIndex: number;
+  complete: boolean;
+  justCompleted: boolean;
+  onNothingToReport: () => void;
 }) {
   const { ref, inView } = useInView();
 
@@ -99,9 +104,12 @@ function SymptomGroup({
     >
       <ConditionChapterMarker
         condition={condition}
-        collapsed={useGrouping ? isCollapsed : false}
-        onToggle={useGrouping ? onToggle : undefined}
+        collapsed={isCollapsed}
+        onToggle={onToggle}
         previewValues={groupSymptoms.slice(0, 5).map((s) => entries[s.id] ?? 0)}
+        complete={complete}
+        justCompleted={justCompleted}
+        onNothingToReport={onNothingToReport}
       >
         {groupSymptoms.map((symptom) => (
           <SymptomRow
@@ -163,10 +171,12 @@ export default function LogPage() {
     }
   }
 
-  const useGrouping = true;
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    () => new Set(conditions.length >= 2 ? groups.map((g) => g.condition) : [])
-  );
+  // Wizard-style flow: first condition expanded, rest collapsed.
+  // For existing logs, all groups expanded (user is editing, not progressing).
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    if (existingLog) return new Set();
+    return new Set(groups.slice(1).map((g) => g.condition));
+  });
 
   function toggleGroup(condition: string) {
     setCollapsedGroups((prev) => {
@@ -176,6 +186,23 @@ export default function LogPage() {
       return next;
     });
   }
+
+  // Track which conditions the user has "resolved" — either by filling every symptom
+  // or by tapping Nothing to report. Used to advance the progress indicator and
+  // auto-collapse completed sections.
+  const [completedConditions, setCompletedConditions] = useState<Set<string>>(() => {
+    if (!existingLog) return new Set();
+    // Pre-mark conditions complete if all their symptoms appear in the existing log.
+    const loggedIds = new Set(existingLog.entries.map((e) => e.symptomId));
+    return new Set(
+      groups
+        .filter((g) => g.symptoms.every((s) => loggedIds.has(s.id)))
+        .map((g) => g.condition)
+    );
+  });
+
+  // One-shot pulse target — the condition that *just* transitioned to complete.
+  const [justCompletedCondition, setJustCompletedCondition] = useState<string | null>(null);
 
   const [entries, setEntries] = useState<EntryMap>(() => {
     if (existingLog) {
@@ -198,6 +225,65 @@ export default function LogPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingLog?.date]);
+
+  /**
+   * Advance the wizard when a condition becomes fully filled.
+   * Triggered by a chip commit that pushes the last symptom in the group above 0.
+   */
+  function advanceFromCondition(condition: string) {
+    setJustCompletedCondition(condition);
+    setCompletedConditions((prev) => {
+      if (prev.has(condition)) return prev;
+      const next = new Set(prev);
+      next.add(condition);
+      return next;
+    });
+    // After the pulse, collapse the completed group and open the next incomplete one.
+    window.setTimeout(() => {
+      setCollapsedGroups((prevCollapsed) => {
+        const nextCollapsed = new Set(prevCollapsed);
+        nextCollapsed.add(condition);
+        setCompletedConditions((doneSet) => {
+          const nextGroup = groups.find(
+            (g) => g.condition !== condition && !doneSet.has(g.condition)
+          );
+          if (nextGroup) nextCollapsed.delete(nextGroup.condition);
+          return doneSet;
+        });
+        return nextCollapsed;
+      });
+      setJustCompletedCondition(null);
+    }, 600);
+  }
+
+  function handleEntryChange(symptomId: string, value: number) {
+    setEntries((prev) => {
+      const next = { ...prev, [symptomId]: value };
+      // Did this commit just complete a condition?
+      const group = groups.find((g) => g.symptoms.some((s) => s.id === symptomId));
+      if (group && !completedConditions.has(group.condition)) {
+        const allFilled = group.symptoms.every((s) => (next[s.id] ?? 0) > 0);
+        if (allFilled) {
+          // Defer advance so the chip's own commit animation runs first.
+          window.setTimeout(() => advanceFromCondition(group.condition), 150);
+        }
+      }
+      return next;
+    });
+  }
+
+  function handleNothingToReport(condition: string) {
+    const group = groups.find((g) => g.condition === condition);
+    if (!group) return;
+    setEntries((prev) => {
+      const next = { ...prev };
+      group.symptoms.forEach((s) => {
+        next[s.id] = 0;
+      });
+      return next;
+    });
+    advanceFromCondition(condition);
+  }
 
   const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
   const [showModal, setShowModal] = useState(false);
@@ -288,18 +374,32 @@ export default function LogPage() {
               >
                 TODAY&rsquo;S LOG
               </p>
-              <p
+              <div
                 style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "24px",
-                  fontWeight: 400,
-                  color: "var(--text-primary)",
-                  lineHeight: 1.2,
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  gap: "16px",
                   margin: "0 0 4px",
                 }}
               >
-                Rate Your Symptoms
-              </p>
+                <p
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "24px",
+                    fontWeight: 400,
+                    color: "var(--text-primary)",
+                    lineHeight: 1.2,
+                    margin: 0,
+                  }}
+                >
+                  Rate Your Symptoms
+                </p>
+                <ConditionProgress
+                  total={groups.length}
+                  completed={completedConditions.size}
+                />
+              </div>
               <p
                 style={{
                   fontFamily: "var(--font-body)",
@@ -328,19 +428,22 @@ export default function LogPage() {
 
       <div className="pt-2">
         {groups.map(({ condition, symptoms: groupSymptoms }, index) => {
-          const isCollapsed = useGrouping && collapsedGroups.has(condition);
+          const isCollapsed = collapsedGroups.has(condition);
+          const isComplete = completedConditions.has(condition);
           return (
             <SymptomGroup
               key={condition}
               condition={condition}
               groupSymptoms={groupSymptoms}
-              useGrouping={useGrouping}
               isCollapsed={isCollapsed}
               onToggle={() => toggleGroup(condition)}
               entries={entries}
-              onEntryChange={(id, v) => setEntries((prev) => ({ ...prev, [id]: v }))}
+              onEntryChange={handleEntryChange}
               justSaved={saveState === "saved"}
               entryIndex={index}
+              complete={isComplete}
+              justCompleted={justCompletedCondition === condition}
+              onNothingToReport={() => handleNothingToReport(condition)}
             />
           );
         })}
