@@ -19,10 +19,10 @@
   --severity-0-fill: transparent;
   --severity-0-border: #737373; /* Richer Grey */
   --severity-1: #00A36C; /* Rich Green */
-  --severity-2: #FFB600; /* Rich Gold */
-  --severity-3: #F95700; /* Rich Orange */
-  --severity-4: #E60000; /* Rich Red */
-  --severity-5: #6A0DAD; /* Purple */
+  --severity-2: #007AFF; /* True Blue */
+  --severity-3: #FFB600; /* Rich Gold/Yellow */
+  --severity-4: #F95700; /* Rich Orange */
+  --severity-5: #E60000; /* Rich Red */
 
   /* Context slider (neutral gray - not severity colors) */
   --context-slider-low: #d1d1ce;
@@ -34,6 +34,7 @@
   --chip-pulse-selected-2: var(--severity-2);
   --chip-pulse-selected-3: var(--severity-3);
   --chip-pulse-selected-4: var(--severity-4);
+  --chip-pulse-selected-5: var(--severity-5);
   --chip-pulse-blend-hover: normal;
   --chip-pulse-blend-selected: multiply;
 
@@ -195,13 +196,13 @@ body {
   opacity: 0.9;
 }
 [data-theme="dark"] .murmuration-canvas {
-  mix-blend-mode: multiply;
-  opacity: 0.6;
+  mix-blend-mode: normal;
+  opacity: 0.8;
 }
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) .murmuration-canvas {
-    mix-blend-mode: multiply;
-    opacity: 0.6;
+    mix-blend-mode: normal;
+    opacity: 0.8;
   }
 }
 

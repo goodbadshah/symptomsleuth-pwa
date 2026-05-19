@@ -32,7 +32,9 @@ interface ChipDef {
   selectedBg: string;
   defaultBg: string;
   selectedBorder: string;
+  defaultBorder: string;
   selectedText: string;
+  defaultText: string;
 }
 
 const SEVERITY_CHIPS: ChipDef[] = [
@@ -40,49 +42,61 @@ const SEVERITY_CHIPS: ChipDef[] = [
     label: "None",
     value: 0,
     selectedBg: "var(--severity-1)",
-    defaultBg: "rgba(0, 163, 108, 0.45)", /* Rich Green */
+    defaultBg: "rgba(0, 163, 108, 0.1)",
     selectedBorder: "var(--severity-1)",
+    defaultBorder: "rgba(0, 163, 108, 0.3)",
     selectedText: "#ffffff",
+    defaultText: "var(--text-primary)",
   },
   {
     label: "Mild",
     value: 1,
     selectedBg: "var(--severity-2)",
-    defaultBg: "rgba(255, 182, 0, 0.45)", /* Rich Gold */
+    defaultBg: "rgba(0, 122, 255, 0.1)",
     selectedBorder: "var(--severity-2)",
+    defaultBorder: "rgba(0, 122, 255, 0.3)",
     selectedText: "#ffffff",
+    defaultText: "var(--text-primary)",
   },
   {
     label: "Medium",
     value: 2,
     selectedBg: "var(--severity-3)",
-    defaultBg: "rgba(249, 87, 0, 0.45)", /* Rich Orange */
+    defaultBg: "rgba(255, 182, 0, 0.1)",
     selectedBorder: "var(--severity-3)",
+    defaultBorder: "rgba(255, 182, 0, 0.3)",
     selectedText: "#ffffff",
+    defaultText: "var(--text-primary)",
   },
   {
     label: "Severe",
     value: 3,
     selectedBg: "var(--severity-4)",
-    defaultBg: "rgba(230, 0, 0, 0.45)", /* Rich Red */
+    defaultBg: "rgba(249, 87, 0, 0.1)",
     selectedBorder: "var(--severity-4)",
+    defaultBorder: "rgba(249, 87, 0, 0.3)",
     selectedText: "#ffffff",
+    defaultText: "var(--text-primary)",
   },
   {
     label: "Extreme",
     value: 4,
-    selectedBg: "#6A0DAD",
-    defaultBg: "rgba(106, 13, 173, 0.45)", /* Purple */
-    selectedBorder: "#6A0DAD",
+    selectedBg: "var(--severity-5)",
+    defaultBg: "rgba(230, 0, 0, 0.1)",
+    selectedBorder: "var(--severity-5)",
+    defaultBorder: "rgba(230, 0, 0, 0.3)",
     selectedText: "#ffffff",
+    defaultText: "var(--text-primary)",
   },
 ];
 
 const CONTEXT_SELECTED = {
   bg: "var(--context-slider-high)",
-  defaultBg: "rgba(74,74,74,0.1)",
+  defaultBg: "var(--bg-surface)",
   border: "var(--context-slider-high)",
+  defaultBorder: "rgba(74,74,74,0.3)",
   text: "#ffffff",
+  defaultText: "var(--text-secondary)",
 };
 
 // Map scale to box shadow glow colors (saturated and wide spread)
@@ -91,7 +105,7 @@ const GLOW_COLORS = {
   1: "var(--severity-2)",
   2: "var(--severity-3)",
   3: "var(--severity-4)",
-  4: "#6A0DAD",
+  4: "var(--severity-5)",
 };
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -154,14 +168,15 @@ export default function SeverityChipSelector({
                   bg: sourceChip.selectedBg,
                   defaultBg: sourceChip.defaultBg,
                   border: sourceChip.selectedBorder,
+                  defaultBorder: sourceChip.defaultBorder,
                   text: sourceChip.selectedText,
+                  defaultText: sourceChip.defaultText,
                 };
 
           // Outer ring: severity-colored offset ring when selected,
-          // neutral hairline ring when resting (double-bezel outer shell)
-          const outerBoxShadow = selected
-            ? `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}`
-            : "0 0 0 1px rgba(0,0,0,0.04)";
+          // muted outline when resting (now dynamically using defaultBorder)
+          const restingBoxShadow = `0 0 0 1px var(--bg-primary), 0 0 0 1.5px ${sc.defaultBorder}`;
+          const selectedBoxShadow = `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}`;
 
           const glowColor = scale === "severity" 
             ? GLOW_COLORS[sourceChip.value as keyof typeof GLOW_COLORS] 
@@ -180,10 +195,10 @@ export default function SeverityChipSelector({
               whileTap="tap"
               animate={selected ? "selected" : "rest"}
               variants={{
-                rest: { scale: 1, boxShadow: "0 0 0 1px rgba(0,0,0,0.04)" },
-                hover: { scale: 1.04, boxShadow: selected ? `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}` : `0 0 0 1px var(--bg-primary), 0 0 0 1.5px ${sc.border}` },
+                rest: { scale: 1, boxShadow: restingBoxShadow },
+                hover: { scale: 1.04, boxShadow: selected ? selectedBoxShadow : restingBoxShadow },
                 tap: { scale: 0.90 },
-                selected: { scale: 1, boxShadow: `0 0 0 1px var(--bg-primary), 0 0 0 2.5px ${sc.border}` }
+                selected: { scale: 1, boxShadow: selectedBoxShadow }
               }}
               transition={{
                 type: "spring",
@@ -210,7 +225,7 @@ export default function SeverityChipSelector({
                 variants={{
                   rest: { 
                     backgroundColor: selected ? sc.bg : sc.defaultBg,
-                    color: selected ? "#ffffff" : "var(--text-secondary)",
+                    color: selected ? "#ffffff" : sc.defaultText,
                   },
                   hover: { 
                     backgroundColor: sc.bg, // Fully flood with saturated color

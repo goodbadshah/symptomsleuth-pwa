@@ -15,6 +15,7 @@ import type { LogMessage } from "@/utils/logMessages";
 import ConditionChapterMarker from "@/components/log/ConditionChapterMarker";
 import ConditionProgress from "@/components/log/ConditionProgress";
 import SymptomWizard from "@/components/log/SymptomWizard";
+import ConditionManagerModal from "@/components/log/ConditionManagerModal";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────────────────
 
@@ -292,24 +293,15 @@ export default function LogPage() {
               }
             }, 400);
           } else {
-            // All conditions are completed; scroll to the condition we just finished
-            // This ensures its sticky header stays pinned correctly and Dietary Intake naturally appears beneath it.
+            // All conditions are completed; scroll to the top of the page
+            // This ensures the user can see their collapsed symptom lists
             window.setTimeout(() => {
-              const el = document.getElementById(`condition-group-${condition}`);
-              if (el) {
-                const _container = el.closest(".overflow-y-auto") as HTMLElement | null;
-                if (_container) {
-                  const headerOffset = headerHeight || 180; 
-                  const elementPosition = el.getBoundingClientRect().top;
-                  const containerPosition = _container.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition - containerPosition + _container.scrollTop - headerOffset;
-                  _container.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                } else {
-                  const headerOffset = headerHeight || 180;
-                  const elementPosition = el.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                  window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                }
+              // Try to find the closest scrolling container if any, else fall back to window
+              const _container = document.querySelector(".overflow-y-auto") as HTMLElement | null;
+              if (_container) {
+                _container.scrollTo({ top: 0, behavior: "smooth" });
+              } else {
+                window.scrollTo({ top: 0, behavior: "smooth" });
               }
             }, 400);
           }
@@ -386,6 +378,7 @@ export default function LogPage() {
 
   const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
   const [showModal, setShowModal] = useState(false);
+  const [showManager, setShowManager] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<LogMessage | null>(null);
   const { count: streak } = useStreak();
 
@@ -710,6 +703,16 @@ export default function LogPage() {
         </motion.button>
       </div>
 
+      <div className="max-w-[480px] mx-auto px-4 md:px-0">
+        <button
+          onClick={() => setShowManager(true)}
+          className="w-full flex items-center justify-center gap-3 px-5 py-4 mt-6 mb-12 rounded-[1.25rem] border border-[--border] text-[--text-primary] bg-white group hover:bg-[#FAFAF8] active:scale-[0.98] transition-all duration-150"
+          style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
+        >
+          <span className="font-body font-medium text-[15px]">Edit Conditions & Symptoms</span>
+        </button>
+      </div>
+
       </div>
 
       <SaveConfirmModal
@@ -717,6 +720,10 @@ export default function LogPage() {
         onDismiss={() => setShowModal(false)}
         message={currentMessage}
         streak={streak}
+      />
+      <ConditionManagerModal
+        isOpen={showManager}
+        onClose={() => setShowManager(false)}
       />
     </div>
   );

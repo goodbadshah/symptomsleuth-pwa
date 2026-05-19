@@ -258,7 +258,7 @@ function CompactRow({
       "var(--severity-2)",
       "var(--severity-3)",
       "var(--severity-4)",
-      "#6A0DAD"
+      "var(--severity-5)"
     ];
 
     const bgColor = hasSeverity

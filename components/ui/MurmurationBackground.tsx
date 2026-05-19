@@ -26,14 +26,21 @@ export default function MurmurationBackground() {
     let width = window.innerWidth;
     let height = window.innerHeight;
 
+    // 1. Respect prefers-reduced-motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (prefersReducedMotion.matches) {
+      if (canvas) canvas.style.display = 'none';
+      return;
+    }
+
     // High density, tiny sizes for majestic starling clouds
     const isMobile = width < 768;
     const particleCount = isMobile ? 507 : 1352; 
     const particles: Particle[] = [];
 
-    // True Reynolds Boids configuration for mathematical waves
-    const maxSpeed = 1.8;
-    const maxForce = 0.025; // Tiny force = graceful, wide swooping turns
+    // 2. Slow it down (True Reynolds Boids configuration for mathematical waves)
+    const maxSpeed = 0.7; // Cut from 1.8 for calming drift
+    const maxForce = 0.015; // Cut from 0.025 for graceful, wide swooping turns
     const perceptionRadius = 90;
     const perceptionRadiusSq = perceptionRadius * perceptionRadius;
     const separationRadius = 25;
@@ -73,7 +80,17 @@ export default function MurmurationBackground() {
       }
     };
 
+    let isVisible = !document.hidden;
+    let isDrawing = false;
+
     const draw = () => {
+      // 4. Pause when hidden
+      if (!isVisible) {
+        isDrawing = false;
+        return;
+      }
+      isDrawing = true;
+
       time += 0.002;
       ctx.clearRect(0, 0, width, height);
 
@@ -208,10 +225,11 @@ export default function MurmurationBackground() {
         else if (p.y > height + margin) p.y = -margin;
 
         // Draw tiny, distinct starlings
+        // 3. Dim the luminosity (Subconscious peripheral elements)
         if (isDark) {
-          ctx.fillStyle = i % 8 === 0 ? 'rgba(168, 204, 151, 0.5)' : 'rgba(45, 106, 79, 0.3)'; 
+          ctx.fillStyle = i % 8 === 0 ? 'rgba(168, 204, 151, 0.35)' : 'rgba(45, 106, 79, 0.2)'; 
         } else {
-          ctx.fillStyle = i % 8 === 0 ? '#EBE8D8' : '#E2DEC7'; 
+          ctx.fillStyle = i % 8 === 0 ? 'rgba(235, 232, 216, 0.6)' : 'rgba(226, 222, 199, 0.5)'; 
         }
         
         ctx.beginPath();
@@ -244,6 +262,14 @@ export default function MurmurationBackground() {
     window.addEventListener('pointermove', handleMouseMove as EventListener);
     window.addEventListener('resize', handleResize);
     
+    const handleVisibilityChange = () => {
+      isVisible = !document.hidden;
+      if (isVisible && !isDrawing) {
+        draw();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Re-init on theme change to ensure colors update if theme toggles
     const matchMediaDark = window.matchMedia('(prefers-color-scheme: dark)');
     matchMediaDark.addEventListener('change', handleResize);
@@ -254,6 +280,7 @@ export default function MurmurationBackground() {
       window.removeEventListener('touchmove', handleMouseMove);
       window.removeEventListener('pointermove', handleMouseMove as EventListener);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       matchMediaDark.removeEventListener('change', handleResize);
     };
   }, []);
@@ -263,8 +290,8 @@ export default function MurmurationBackground() {
       ref={canvasRef} 
       className="fixed inset-0 pointer-events-none z-0 murmuration-canvas"
       style={{
-        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,1) 100%)',
-        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,1) 100%)'
+        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,1) 60%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,1) 60%)'
       }}
     />
   );
