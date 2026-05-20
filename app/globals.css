@@ -15,6 +15,10 @@
   --accent-light: #d8f3dc;
   --hover-glow: 0 0 20px rgba(45, 106, 79, 0.15);
 
+  /* Condition Buttons */
+  --condition-active-bg: var(--accent);
+  --condition-active-text: #ffffff;
+
   /* Severity scale - warmer palette (Editorial Stationery update) */
   --severity-0-fill: transparent;
   --severity-0-border: #737373; /* Richer Grey */
@@ -72,6 +76,8 @@
   --chip-text-severe: #ffffff;
   --chip-text-extreme: #ffffff;
   --chip-text-context: #ffffff;
+  --condition-active-bg: #2d6a4f;
+  --condition-active-text: #ffffff;
 
   /* Fonts */
   --font-display: var(--font-fraunces);
@@ -97,6 +103,8 @@
   --color-border: var(--border);
   --color-premium-locked: var(--premium-locked);
   --color-community: var(--community);
+  --color-condition-active-bg: var(--condition-active-bg);
+  --color-condition-active-text: var(--condition-active-text);
   --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-dm-mono);
   --font-display: var(--font-fraunces);
@@ -133,6 +141,8 @@
   --chip-text-extreme: #ffffff;
   --chip-text-context: #ffffff;
   --chip-pulse-blend-selected: screen;
+  --condition-active-bg: #40916c;
+  --condition-active-text: #ffffff;
 
   color-scheme: dark;
 }
@@ -169,6 +179,8 @@
     --chip-text-extreme: #ffffff;
     --chip-text-context: #ffffff;
   --chip-pulse-blend-selected: screen;
+  --condition-active-bg: #40916c;
+  --condition-active-text: #ffffff;
 
     color-scheme: dark;
   }

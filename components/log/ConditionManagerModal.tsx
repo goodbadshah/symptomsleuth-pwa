@@ -159,7 +159,7 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                             ? "0 0 0 1.5px var(--accent)"
                             : `0 0 0 1px var(--bezel-ring)`,
                           backgroundColor: isSelected
-                            ? "rgba(216,243,220,0.3)"
+                            ? "rgba(45, 106, 79, 0.15)"
                             : "var(--bezel-outer-bg)",
                           transition: "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1)",
                           cursor: "pointer",
@@ -171,7 +171,7 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                         />
                         <div style={{
                           padding: "10px 12px",
-                          backgroundColor: isSelected ? "rgba(216,243,220,0.5)" : "var(--bg-surface)",
+                          backgroundColor: isSelected ? "var(--color-condition-active-bg)" : "var(--bg-surface)",
                           boxShadow: "var(--bezel-inset-shadow)",
                           borderRadius: "0.875rem",
                           minHeight: "56px",
@@ -180,7 +180,7 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                           <span
                             className="text-[15px] font-medium leading-tight font-body truncate block"
                             style={{
-                              color: isSelected ? "var(--accent)" : "var(--text-primary)",
+                              color: isSelected ? "var(--color-condition-active-text)" : "var(--text-primary)",
                               transition: "color 200ms cubic-bezier(0.16,1,0.3,1)",
                             }}
                           >
