@@ -1,403 +1,108 @@
-commit 22771b3f54f24c93cf095c408766b6232ff403f7
-Author: goodbadshah <200090468+goodbadshah@users.noreply.github.com>
-Date:   Sun May 17 23:04:13 2026 -0400
-
-    fix(log): anchor scroll accurately on last condition
-    
-    - Replaced references to 'Food Triggers' with 'Dietary Intake'.
-    - Removed the 'Optional' label since Dietary Intake is meant to be
-      required/prominent.
-    - When the final condition completes, the auto-scroll target is now the
-      condition group itself (pinning its header cleanly just below the
-      Date boundary), instead of guessing the scroll geometry for Dietary
-      Intake.
-
-diff --git a/components/log/FoodTriggers.tsx b/components/log/FoodTriggers.tsx
-index 3caaa42..f7d7c38 100644
---- a/components/log/FoodTriggers.tsx
-+++ b/components/log/FoodTriggers.tsx
-@@ -67,24 +67,9 @@ export default function FoodTriggers({ value, onChange }: Props) {
-               className="text-base font-medium"
-               style={{ color: "var(--text-primary)", fontFamily: "var(--font-body)" }}
-             >
--              Food Triggers
-+              Dietary Intake
-             </p>
--            {/* Eyebrow pill - optional */}
--            <span
--              className="inline-flex items-center rounded-full"
--              style={{
--                padding: "2px 8px",
--                fontSize: "10px",
--                fontFamily: "var(--font-body)",
--                fontWeight: 500,
--                textTransform: "uppercase",
--                letterSpacing: "0.15em",
--                backgroundColor: "var(--accent-light)",
--                color: "var(--accent)",
--              }}
--            >
--              Optional
--            </span>
-+            
-           </div>
-           <span
-             aria-hidden="true"
-@@ -131,7 +116,7 @@ export default function FoodTriggers({ value, onChange }: Props) {
-                   marginBottom: "10px",
-                 }}
-               >
--                Select anything you ate today.
-+                Select any categories you consumed today.
-               </p>
-               {/* 2-column chip grid - same pattern as onboarding ConditionSelect */}
-               <div className="grid grid-cols-2 gap-2">
-
-commit 34260e82894f04964126e23b41d9b6e79a0cc0f7
-Author: goodbadshah <200090468+goodbadshah@users.noreply.github.com>
-Date:   Sun May 17 19:46:13 2026 -0400
-
-    style: update severity chips to richer, saturated core colors and apply full-bleed flat layouts
-
-diff --git a/components/log/FoodTriggers.tsx b/components/log/FoodTriggers.tsx
-index 9e7bbee..3caaa42 100644
---- a/components/log/FoodTriggers.tsx
-+++ b/components/log/FoodTriggers.tsx
-@@ -40,25 +40,16 @@ export default function FoodTriggers({ value, onChange }: Props) {
-   }
- 
-   return (
--    // Outer shell - Double-Bezel
-     <div
-       style={{
--        padding: "6px",
--        borderRadius: "1.25rem",
--        boxShadow: "0 0 0 1px var(--bezel-ring)",
--        backgroundColor: "var(--bezel-outer-bg)",
-+        display: "flex",
-+        flexDirection: "column",
-+        backgroundColor: "var(--bg-surface)",
-+        borderBottom: "1px solid var(--border)",
-+        margin: "0 -16px",
-       }}
-     >
--      {/* Inner core */}
--      <div
--        style={{
--          backgroundColor: "var(--bg-surface)",
--          boxShadow: "var(--bezel-inset-shadow)",
--          borderRadius: "0.875rem",
--          overflow: "hidden",
--        }}
--      >
--        {/* Toggle header */}
-+      {/* Toggle header */}
-         <button
-           onClick={() => setOpen((o) => !o)}
-           className="w-full flex items-center justify-between tap-feedback"
-@@ -129,7 +120,7 @@ export default function FoodTriggers({ value, onChange }: Props) {
-           <div style={{ minHeight: 0 }}>
-             <div
-               style={{
--                padding: "0 12px 14px",
-+                padding: "0 16px 14px",
-               }}
-             >
-               <p
-@@ -212,7 +203,6 @@ export default function FoodTriggers({ value, onChange }: Props) {
-             </div>
-           </div>
-         </div>
--      </div>
-     </div>
-   );
- }
-
-commit 893961ce698802ae958721ca338fb435850918d5
-Author: goodbadshah <200090468+goodbadshah@users.noreply.github.com>
-Date:   Sat May 16 13:10:26 2026 -0400
-
-    feat(ui): dynamic UI refresh, murmuration background, and layout restructuring
-
-diff --git a/components/log/FoodTriggers.tsx b/components/log/FoodTriggers.tsx
-index 9ebb6e4..9e7bbee 100644
---- a/components/log/FoodTriggers.tsx
-+++ b/components/log/FoodTriggers.tsx
-@@ -150,7 +150,7 @@ export default function FoodTriggers({ value, onChange }: Props) {
-                     <button
+--- components/log/FoodTriggers.tsx
++++ components/log/FoodTriggers.tsx
+@@ -2,2 +2,3 @@
+ import { useState } from "react";
++import { motion, AnimatePresence } from "framer-motion";
+ import type { DailyContext } from "@/app/providers";
+@@ -107,31 +108,31 @@
+                   const isSelected = selected.has(trigger);
++                  
++                  const restingBoxShadow = "0 0 0 1px var(--bezel-ring)";
++                  const selectedBoxShadow = "0 0 0 1px var(--bg-primary), 0 0 0 2.5px var(--accent)";
++                  
+                   return (
+-                    <button
++                    <motion.button
                        key={trigger}
++                      type="button"
++                      role="checkbox"
                        onClick={() => toggle(trigger)}
--                      className="w-full tap-feedback"
-+                      className="w-full tap-feedback group relative"
+-                      className="active:scale-[0.98] group flex-none relative"
++                      initial="rest"
++                      whileHover="hover"
++                      whileTap="tap"
++                      animate={isSelected ? "selected" : "rest"}
++                      variants={{
++                        rest: { scale: 1, boxShadow: restingBoxShadow, backgroundColor: "var(--bezel-outer-bg)" },
++                        hover: { scale: 1.04, boxShadow: isSelected ? selectedBoxShadow : restingBoxShadow, backgroundColor: isSelected ? "var(--bg-primary)" : "var(--bg-primary)" },
++                        tap: { scale: 0.90 },
++                        selected: { scale: 1, boxShadow: selectedBoxShadow, backgroundColor: "var(--bg-primary)" }
++                      }}
++                      transition={{
++                        type: "spring",
++                        stiffness: 700,
++                        damping: 25,
++                      }}
                        style={{
-                         padding: "6px",
-                         borderRadius: "1.25rem",
-@@ -161,20 +161,21 @@ export default function FoodTriggers({ value, onChange }: Props) {
-                           ? "rgba(216,243,220,0.3)"
-                           : "var(--bezel-outer-bg)",
-                         transition:
--                          "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1)",
-+                          "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1), transform 150ms",
++                        flex: "none",
++                        position: "relative",
+                         height: "56px",
+                         padding: "3px",
+                         borderRadius: "12px",
+-                        boxShadow: isSelected
+-                          ? "0 0 0 1px var(--bg-primary), 0 0 0 2.5px var(--accent)"
+-                          : "0 0 0 1px var(--bezel-ring)",
+-                        backgroundColor: isSelected
+-                          ? "var(--bg-primary)"
+-                          : "var(--bezel-outer-bg)",
+-                        transition:
+-                          "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1), transform 150ms",
                          cursor: "pointer",
                          border: "none",
-+                        overflow: "hidden", // ensures the pulse doesn't break out awkwardly if needed, but actually we might want it visible
+@@ -140,16 +141,20 @@
                        }}
-                       aria-pressed={isSelected}
+-                      aria-pressed={isSelected}
++                      aria-checked={isSelected}
                      >
                        {/* Inner core */}
-                       <div
--                        className="flex items-start text-left"
-+                        className="flex items-start text-left relative overflow-hidden"
+-                      <div
+-                        className="flex items-center justify-center relative overflow-hidden"
++                      <motion.div
++                        variants={{
++                          rest: { backgroundColor: isSelected ? "var(--accent)" : "var(--bg-surface)", color: isSelected ? "#ffffff" : "var(--text-secondary)" },
++                          hover: { backgroundColor: "var(--accent)", color: "#ffffff" },
++                          tap: { backgroundColor: "var(--accent)", color: "#ffffff" },
++                          selected: { backgroundColor: "var(--accent)", color: "#ffffff" }
++                        }}
                          style={{
-                           padding: "10px 12px",
-                           backgroundColor: isSelected
--                            ? "rgba(216,243,220,0.5)"
--                            : "var(--bg-surface)",
-+                          ? "rgba(216,243,220,0.6)"
-+                          : "rgba(216,243,220,0.25)",
-                           boxShadow: "var(--bezel-inset-shadow)",
-                           borderRadius: "0.875rem",
-                           minHeight: "44px",
-@@ -182,8 +183,19 @@ export default function FoodTriggers({ value, onChange }: Props) {
-                             "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
++                          display: "flex",
++                          alignItems: "center",
++                          justifyContent: "center",
++                          position: "relative",
++                          overflow: "hidden",
+                           height: "100%",
+                           padding: "0 16px",
+-                          backgroundColor: isSelected ? "var(--accent)" : "var(--bg-surface)",
+-                          color: isSelected ? "#ffffff" : "var(--text-secondary)",
+-                          boxShadow: "var(--bezel-inset-shadow)",
++                          boxShadow: isSelected ? "var(--bezel-inset-shadow), inset 0 1px 2px rgba(0,0,0,0.06)" : "var(--bezel-inset-shadow)",
+                           borderRadius: "9px",
+-                          transition:
+-                            "background-color 200ms cubic-bezier(0.16,1,0.3,1), color 200ms cubic-bezier(0.16,1,0.3,1)",
                          }}
                        >
-+                        {/* Pulse Glow Layer inside the core */}
-+                        <div 
-+                          className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
-+                            isSelected ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover:opacity-100 group-hover:animate-pulse'
-+                          }`}
-+                          style={{
-+                            background: 'radial-gradient(circle at center, rgba(45,106,79,0.3), transparent 70%)',
-+                            zIndex: 0,
-+                          }}
-+                        />
-+                        
++                        <AnimatePresence>
++                          <motion.div
++                            variants={{
++                              rest: { opacity: 0, scale: 0.9 },
++                              hover: { opacity: [0.6, 0.9, 0.6], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } },
++                              selected: { opacity: [0.8, 1, 0.8], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } }
++                            }}
++                            style={{
++                              position: "absolute",
++                              inset: 0,
++                              background: `radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 85%)`,
++                              zIndex: 0,
++                              pointerEvents: "none",
++                            }}
++                          />
++                        </AnimatePresence>
++
                          <span
--                          className={`text-sm font-medium leading-tight food-trigger-label${isSelected ? " food-trigger-label--selected" : ""}`}
-+                          className={`text-sm font-medium leading-tight relative z-10 food-trigger-label${isSelected ? " food-trigger-label--selected" : ""}`}
-                           style={{
-                             fontFamily: "var(--font-body)",
-                             transition:
-
-commit 9d65c8a6a41f70d6282a22ba6143582670affffe
-Author: goodbadshah <200090468+goodbadshah@users.noreply.github.com>
-Date:   Wed Apr 22 11:57:07 2026 -0400
-
-    snapshot: broken state from Apr 22 AM
-    
-    Captures the state right before reverting to Apr 21 evening.
-    Kept on the broken-apr22 branch for reference.
-
-diff --git a/components/log/FoodTriggers.tsx b/components/log/FoodTriggers.tsx
-new file mode 100644
-index 0000000..9ebb6e4
---- /dev/null
-+++ b/components/log/FoodTriggers.tsx
-@@ -0,0 +1,206 @@
-+"use client";
-+
-+import { useState } from "react";
-+import type { DailyContext } from "@/app/providers";
-+
-+const FOOD_TRIGGERS = [
-+  "Dairy",
-+  "Eggs",
-+  "Poultry",
-+  "Red Meat",
-+  "Seafood",
-+  "Legumes",
-+  "Cruciferous Veg",
-+  "Nightshades",
-+  "Gluten",
-+];
-+
-+interface Props {
-+  value: DailyContext;
-+  onChange: (ctx: DailyContext) => void;
-+}
-+
-+export default function FoodTriggers({ value, onChange }: Props) {
-+  const [open, setOpen] = useState(true);
-+
-+  const selected = new Set(value.foodTriggers ?? []);
-+
-+  function toggle(trigger: string) {
-+    const next = new Set(selected);
-+    if (next.has(trigger)) {
-+      next.delete(trigger);
-+    } else {
-+      next.add(trigger);
-+    }
-+    const triggers = [...next];
-+    onChange({
-+      ...value,
-+      foodTriggers: triggers.length > 0 ? triggers : undefined,
-+    });
-+  }
-+
-+  return (
-+    // Outer shell - Double-Bezel
-+    <div
-+      style={{
-+        padding: "6px",
-+        borderRadius: "1.25rem",
-+        boxShadow: "0 0 0 1px var(--bezel-ring)",
-+        backgroundColor: "var(--bezel-outer-bg)",
-+      }}
-+    >
-+      {/* Inner core */}
-+      <div
-+        style={{
-+          backgroundColor: "var(--bg-surface)",
-+          boxShadow: "var(--bezel-inset-shadow)",
-+          borderRadius: "0.875rem",
-+          overflow: "hidden",
-+        }}
-+      >
-+        {/* Toggle header */}
-+        <button
-+          onClick={() => setOpen((o) => !o)}
-+          className="w-full flex items-center justify-between tap-feedback"
-+          style={{
-+            padding: "14px 16px",
-+            minHeight: "52px",
-+            backgroundColor: "transparent",
-+            border: "none",
-+            cursor: "pointer",
-+          }}
-+          aria-expanded={open}
-+        >
-+          <div className="flex items-center gap-3">
-+            <p
-+              className="text-base font-medium"
-+              style={{ color: "var(--text-primary)", fontFamily: "var(--font-body)" }}
-+            >
-+              Food Triggers
-+            </p>
-+            {/* Eyebrow pill - optional */}
-+            <span
-+              className="inline-flex items-center rounded-full"
-+              style={{
-+                padding: "2px 8px",
-+                fontSize: "10px",
-+                fontFamily: "var(--font-body)",
-+                fontWeight: 500,
-+                textTransform: "uppercase",
-+                letterSpacing: "0.15em",
-+                backgroundColor: "var(--accent-light)",
-+                color: "var(--accent)",
-+              }}
-+            >
-+              Optional
-+            </span>
-+          </div>
-+          <span
-+            aria-hidden="true"
-+            style={{
-+              color: "var(--text-secondary)",
-+              transition: "transform 400ms cubic-bezier(0.16,1,0.3,1)",
-+              transform: open ? "rotate(180deg)" : "rotate(0deg)",
-+              display: "flex",
-+              alignItems: "center",
-+            }}
-+          >
-+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-+              <polyline
-+                points="3,6 8,11 13,6"
-+                stroke="currentColor"
-+                strokeWidth="1.5"
-+                strokeLinecap="round"
-+                strokeLinejoin="round"
-+              />
-+            </svg>
-+          </span>
-+        </button>
-+
-+        {/* Collapsible body */}
-+        <div
-+          style={{
-+            display: "grid",
-+            gridTemplateRows: open ? "1fr" : "0fr",
-+            transition: "grid-template-rows 400ms cubic-bezier(0.16,1,0.3,1)",
-+            overflow: "hidden",
-+          }}
-+        >
-+          <div style={{ minHeight: 0 }}>
-+            <div
-+              style={{
-+                padding: "0 12px 14px",
-+              }}
-+            >
-+              <p
-+                style={{
-+                  fontFamily: "var(--font-body)",
-+                  fontSize: "14px",
-+                  color: "var(--text-secondary)",
-+                  marginBottom: "10px",
-+                }}
-+              >
-+                Select anything you ate today.
-+              </p>
-+              {/* 2-column chip grid - same pattern as onboarding ConditionSelect */}
-+              <div className="grid grid-cols-2 gap-2">
-+                {FOOD_TRIGGERS.map((trigger) => {
-+                  const isSelected = selected.has(trigger);
-+                  return (
-+                    <button
-+                      key={trigger}
-+                      onClick={() => toggle(trigger)}
-+                      className="w-full tap-feedback"
-+                      style={{
-+                        padding: "6px",
-+                        borderRadius: "1.25rem",
-+                        boxShadow: isSelected
-+                          ? "0 0 0 1.5px var(--accent)"
-+                          : "0 0 0 1px var(--bezel-ring)",
-+                        backgroundColor: isSelected
-+                          ? "rgba(216,243,220,0.3)"
-+                          : "var(--bezel-outer-bg)",
-+                        transition:
-+                          "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1)",
-+                        cursor: "pointer",
-+                        border: "none",
-+                      }}
-+                      aria-pressed={isSelected}
-+                    >
-+                      {/* Inner core */}
-+                      <div
-+                        className="flex items-start text-left"
-+                        style={{
-+                          padding: "10px 12px",
-+                          backgroundColor: isSelected
-+                            ? "rgba(216,243,220,0.5)"
-+                            : "var(--bg-surface)",
-+                          boxShadow: "var(--bezel-inset-shadow)",
-+                          borderRadius: "0.875rem",
-+                          minHeight: "44px",
-+                          transition:
-+                            "background-color 200ms cubic-bezier(0.16,1,0.3,1)",
-+                        }}
-+                      >
-+                        <span
-+                          className={`text-sm font-medium leading-tight food-trigger-label${isSelected ? " food-trigger-label--selected" : ""}`}
-+                          style={{
-+                            fontFamily: "var(--font-body)",
-+                            transition:
-+                              "color 200ms cubic-bezier(0.16,1,0.3,1)",
-+                          }}
-+                        >
-+                          {trigger}
-+                        </span>
-+                      </div>
-+                    </button>
-+                  );
-+                })}
-+              </div>
-+            </div>
-+          </div>
-+        </div>
-+      </div>
-+    </div>
-+  );
-+}
+@@ -165,4 +170,4 @@
+                         </span>
+-                      </div>
+-                    </button>
++                      </motion.div>
++                    </motion.button>
+                   );
