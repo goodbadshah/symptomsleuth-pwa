@@ -116,6 +116,11 @@ function ActiveRow({
     // Wait for the Framer Motion layout animation to settle before calculating coordinates
     const t = setTimeout(() => {
       if (rowRef.current) {
+        // Skip auto-scroll if the container is collapsed (height is 0)
+        if (rowRef.current.parentElement && rowRef.current.parentElement.clientHeight === 0) {
+          return;
+        }
+
         const _container = rowRef.current.closest(".overflow-y-auto") as HTMLElement | null;
         if (_container) {
           const rect = rowRef.current.getBoundingClientRect();

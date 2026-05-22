@@ -83,7 +83,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { state, hydrated } = useAppState();
   const activeTabIndex = Math.max(0, tabs.findIndex((t) => pathname.includes(t.match)));
   const mainRef = useRef<HTMLElement>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Redirect to onboarding if no conditions selected.
   // Redirect to /welcome if payment is done but account setup is still pending.
