@@ -279,13 +279,13 @@ export default function LogPage() {
               if (el) {
                 const _container = el.closest(".overflow-y-auto") as HTMLElement | null;
                 if (_container) {
-                  const headerOffset = headerHeight ? headerHeight + 64 : 180; // dynamic sticky header height + collapsed chapter height
+                  const headerOffset = 180; // offset for collapsed chapter height
                   const elementPosition = el.getBoundingClientRect().top;
                   const containerPosition = _container.getBoundingClientRect().top;
                   const offsetPosition = elementPosition - containerPosition + _container.scrollTop - headerOffset;
                   _container.scrollTo({ top: offsetPosition, behavior: "smooth" });
                 } else {
-                  const headerOffset = headerHeight ? headerHeight + 64 : 180;
+                  const headerOffset = 180;
                   const elementPosition = el.getBoundingClientRect().top;
                   const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                   window.scrollTo({ top: offsetPosition, behavior: "smooth" });
@@ -293,15 +293,23 @@ export default function LogPage() {
               }
             }, 400);
           } else {
-            // All conditions are completed; scroll to the top of the page
-            // This ensures the user can see their collapsed symptom lists
+            // All conditions are completed; scroll down to the dietary intake section
             window.setTimeout(() => {
-              // Try to find the closest scrolling container if any, else fall back to window
-              const _container = document.querySelector(".overflow-y-auto") as HTMLElement | null;
-              if (_container) {
-                _container.scrollTo({ top: 0, behavior: "smooth" });
-              } else {
-                window.scrollTo({ top: 0, behavior: "smooth" });
+              const foodSection = document.getElementById("food-triggers-section");
+              if (foodSection) {
+                const _container = foodSection.closest(".overflow-y-auto") as HTMLElement | null;
+                if (_container) {
+                  const headerOffset = 90; // Just under the top nav
+                  const elementPosition = foodSection.getBoundingClientRect().top;
+                  const containerPosition = _container.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition - containerPosition + _container.scrollTop - headerOffset;
+                  _container.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                } else {
+                  const headerOffset = 90;
+                  const elementPosition = foodSection.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                  window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                }
               }
             }, 400);
           }
@@ -382,18 +390,6 @@ export default function LogPage() {
   const [currentMessage, setCurrentMessage] = useState<LogMessage | null>(null);
   const { count: streak } = useStreak();
 
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const headerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!headerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      // get the rendered height of the date/rate banner
-      setHeaderHeight(entries[0].target.getBoundingClientRect().height);
-    });
-    observer.observe(headerRef.current);
-    return () => observer.disconnect();
-  }, []);
-
   const handleSave = useCallback(() => {
     const entryList: SymptomEntry[] = symptoms
       .map((s) => ({ symptomId: s.id, value: entries[s.id] ?? 0 }))
@@ -426,16 +422,9 @@ export default function LogPage() {
   }, [symptoms, entries, context, note, today, dispatch, communityOptIn]);
 
   return (
-    <div style={{ minHeight: "100dvh", paddingBottom: "50vh", "--sticky-offset": headerHeight ? `${headerHeight}px` : "150px" } as React.CSSProperties}>
-      {/* Sticky Header Box */}
-      <div 
-        ref={headerRef}
-        className="sticky top-0 z-40" 
-        style={{
-          background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.03) 20%, rgba(0,0,0,0) 100%), var(--bg-primary)",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+    <div style={{ minHeight: "100dvh", paddingBottom: "50vh", "--sticky-offset": "150px" } as React.CSSProperties}>
+      {/* Date Header Block */}
+      <div>
         <div className="max-w-[800px] mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-4">
           <h1
             style={{
