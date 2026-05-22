@@ -105,7 +105,7 @@ const prepareAIPayload = (logs: DailyLog[], conversationHistory: Turn[]) => ({
       severity: entry.value  // 1-4 scale
     })),
     context: log.context  // Sleep, stress, exercise, food triggers
-    // Notes field explicitly excluded
+    // Notes field excluded by default - only included when the user's question explicitly references a note
   })),
   conversation_context: conversationHistory.slice(-5)  // Last 5 turns only
 });
