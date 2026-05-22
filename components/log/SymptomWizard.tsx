@@ -49,6 +49,11 @@ export default function SymptomWizard({
   justSaved = false,
   complete,
 }: Props) {
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    isInitialMount.current = false;
+  }, []);
+
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       {groupSymptoms.map((symptom, index) => {
@@ -76,6 +81,7 @@ export default function SymptomWizard({
                 }}
                 justSaved={justSaved}
                 positionLabel={`${index + 1} of ${groupSymptoms.length}`}
+                enableScroll={!isInitialMount.current}
               />
             ) : (
               <CompactRow
@@ -102,16 +108,20 @@ function ActiveRow({
   onChange,
   justSaved,
   positionLabel,
+  enableScroll,
 }: {
   symptom: Symptom;
   value: number | undefined;
   onChange: (v: number) => void;
   justSaved: boolean;
   positionLabel: string;
+  enableScroll: boolean;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!enableScroll) return;
+
     // The "Typewriter" Auto-Scroll
     // Wait for the Framer Motion layout animation to settle before calculating coordinates
     const t = setTimeout(() => {
@@ -129,7 +139,7 @@ function ActiveRow({
           
           // Gentle Bounds Check Scroll
           // Ensure the newly active row is comfortably visible, but do not jerk it unconditionally.
-          const headerHeight = 160; // 72px AppHeader + ~88px Condition Header
+          const headerHeight = 72; // 72px AppHeader (Dynamic sticky header is gone)
           const currentScroll = _container.scrollTop;
           const relativeTop = rect.top - containerRect.top;
           const relativeBottom = rect.bottom - containerRect.top;
@@ -150,8 +160,13 @@ function ActiveRow({
           // Fallback if container not found
           const rect = rowRef.current.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
-          const targetY = window.scrollY + rect.top - 160;
-          window.scrollTo({ top: targetY, behavior: "smooth" });
+          // Calculate target using smaller header offset
+          const targetY = window.scrollY + rect.top - 92; 
+          
+          // Only scroll if it's off the screen or covered by the AppHeader
+          if (rect.top < 72 || rect.bottom > viewportHeight - 64) {
+             window.scrollTo({ top: targetY, behavior: "smooth" });
+          }
         }
       }
     }, 450); // framer-motion transition is 400ms

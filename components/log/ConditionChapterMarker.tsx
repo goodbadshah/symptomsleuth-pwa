@@ -85,16 +85,12 @@ export default function ConditionChapterMarker({
           : undefined,
       }}
     >
-      {/* LAYER A: Sticky Anchor */}
+      {/* LAYER A: Date Unanchored Chapter Label */}
       <div
         style={{
-          position: "sticky",
-          top: "calc(var(--sticky-offset, 0px) - 1px)",
-          zIndex: 30,
           background: "var(--bg-primary)",
-          // We add a tiny bit of bottom margin/padding so it has breathing room while sticky
           paddingBottom: "8px",
-          margin: "0 -16px", // pull out to match page padding so background covers full bleed if needed
+          margin: "0 -16px", 
           paddingLeft: "16px",
           paddingRight: "16px",
         }}
