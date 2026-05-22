@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppState } from "@/app/providers";
 import type { Symptom } from "@/app/providers";
@@ -30,11 +30,11 @@ function getInitialSymptoms(
   const merged = existingSymptoms.map(s => ({ ...s, enabled: true }));
   const existingKeys = new Set(existingSymptoms.map(s => s.name.toLowerCase()));
 
-  // For any new matching suggestions for the selected conditions, append them disabled
+  // For any new matching suggestions for the selected conditions, append them enabled by default
   const suggested = buildSuggestedSymptoms(selectedConditions);
   for (const s of suggested) {
     if (!existingKeys.has(s.name.toLowerCase())) {
-      merged.push({ ...s, enabled: false });
+      merged.push({ ...s, enabled: true });
     }
   }
 
@@ -51,6 +51,7 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
   const [selectedConditions, setSelectedConditions] = useState<Set<string>>(new Set());
   const [workingSymptoms, setWorkingSymptoms] = useState<(Symptom & { enabled: boolean })[]>([]);
   const [addName, setAddName] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -60,8 +61,6 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
       setAddName("");
     }
   }, [isOpen, state.profile.conditions, state.profile.symptoms]);
-
-  if (!isOpen) return null;
 
   function handleContinueStep1() {
     // Transition to configuring symptoms
@@ -106,22 +105,25 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
   }
 
   return (
-    <>
-      <motion.div
-        className="fixed inset-0 z-50 bg-[#1A1A1A]/40 backdrop-blur-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            className="fixed inset-0 z-50 bg-[#1A1A1A]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
 
-      <motion.div
-        className="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[85vh] overflow-y-auto bg-[--bg-primary] rounded-t-[1.5rem] shadow-xl mx-auto max-w-[800px]"
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-      >
+          <motion.div
+            ref={scrollRef}
+            className="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[85vh] overflow-y-auto bg-[--bg-primary] rounded-t-[1.5rem] shadow-xl mx-auto max-w-[800px]"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+          >
         <div className="p-6 md:p-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -192,19 +194,30 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                   })}
                 </div>
                 
-                <button
+                <motion.button
                   onClick={handleContinueStep1}
                   disabled={selectedConditions.size === 0}
-                  className="w-full flex items-center justify-between gap-3 px-5 py-[14px] rounded-[1.25rem] bg-[--accent] text-white disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.98] transition-transform duration-150"
-                  style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
+                  whileHover={selectedConditions.size > 0 ? { scale: 1.02 } : undefined}
+                  whileTap={selectedConditions.size > 0 ? { scale: 0.98 } : undefined}
+                  className={`group w-full relative flex items-center justify-center px-5 tap-feedback ${selectedConditions.size > 0 ? "shadow-[0_4px_14px_rgba(45,106,79,0.2)]" : ""}`}
+                  style={{
+                    height: "56px",
+                    borderRadius: "1.25rem",
+                    backgroundColor: selectedConditions.size > 0 ? "var(--accent)" : "var(--border)",
+                    color: selectedConditions.size > 0 ? "#ffffff" : "var(--text-secondary)",
+                    cursor: selectedConditions.size > 0 ? "pointer" : "not-allowed",
+                    fontFamily: "var(--font-body)",
+                    border: "none",
+                    transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
+                  }}
                 >
-                  <span className="font-body font-medium text-[15px]">Next: Edit Symptoms</span>
-                  <span className="w-8 h-8 rounded-full bg-black/[0.12] flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px transition-transform duration-150">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 7H11M11 7L7.5 3.5M11 7L7.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <span className="text-[15px] font-medium">Next: Edit Symptoms</span>
+                  <span className="absolute right-5 w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
-                </button>
+                </motion.button>
               </motion.div>
             )}
 
@@ -214,6 +227,11 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
+                onAnimationStart={() => {
+                  if (scrollRef.current) {
+                    scrollRef.current.scrollTop = 0;
+                  }
+                }}
               >
                 <div className="flex flex-col mb-8 -mx-6 md:-mx-8">
                   {workingSymptoms.map((s) => (
@@ -289,23 +307,37 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                     <span className="font-body font-medium text-[15px]">Back</span>
                   </button>
 
-                  <button
+                  <motion.button
                     onClick={handleSave}
-                    className="flex-[2] flex items-center justify-between gap-3 px-5 py-[14px] rounded-[1.25rem] bg-[--accent] text-white group active:scale-[0.98] transition-transform duration-150"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex-[2] relative flex items-center justify-center px-5 tap-feedback shadow-[0_4px_14px_rgba(45,106,79,0.2)] group"
+                    style={{
+                      height: "56px",
+                      borderRadius: "1.25rem",
+                      backgroundColor: "var(--accent)",
+                      color: "#ffffff",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-body)",
+                      border: "none",
+                      transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
+                    }}
                   >
-                    <span className="font-body font-medium text-[15px]">Save Changes</span>
-                    <span className="w-8 h-8 rounded-full bg-black/[0.12] flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px transition-transform duration-150">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11.6667 3.5L5.25004 9.91667L2.33337 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <span className="text-[15px] font-medium">Save Changes</span>
+                    <span className="absolute right-5 w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </span>
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </motion.div>
-    </>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

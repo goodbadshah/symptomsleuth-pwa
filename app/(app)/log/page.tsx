@@ -489,10 +489,7 @@ export default function LogPage() {
                 >
                   Rate Your Symptoms
                 </p>
-                <ConditionProgress
-                  total={totalSymptomCount}
-                  completed={loggedSymptomCount}
-                />
+                
               </div>
               <p
                 style={{
@@ -628,78 +625,135 @@ export default function LogPage() {
         </div>
       </div>
 
-      {/* Save / Update - Button-in-Button */}
-      <div className="pt-6" style={{ paddingLeft: "16px", paddingRight: "16px", paddingBottom: "20px" }}>
-        <motion.button
-          onClick={handleSave}
-          disabled={saveState === "saved"}
-          whileHover={saveState !== "saved" ? { scale: 1.02 } : undefined}
-          whileTap={saveState !== "saved" ? { scale: 0.98 } : undefined}
-          className={`group w-full flex items-center justify-between px-5 tap-feedback ${saveState !== "saved" ? "shadow-[0_4px_14px_rgba(45,106,79,0.2)]" : ""}`}
+      
+      {/* Sticky Bottom Action Bar */}
+      <div 
+        className="fixed bottom-[env(safe-area-inset-bottom,72px)] left-0 right-0 z-50 pointer-events-none"
+        style={{
+          padding: "0 16px",
+          display: "flex",
+          justifyContent: "center",
+          transform: "translateY(-8px)"
+        }}
+      >
+        <div 
+          className="pointer-events-auto w-full max-w-[480px]"
           style={{
-            height: "56px",
-            borderRadius: "1.25rem",
-            backgroundColor: "var(--accent)",
-            color: "#ffffff",
-            fontFamily: "var(--font-body)",
-            border: "none",
-            cursor: saveState === "saved" ? "default" : "pointer",
-            position: "relative",
-            transition: "box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
+            backgroundColor: "var(--bezel-outer-bg)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderRadius: "24px",
+            padding: "8px 8px 8px 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.06), 0 0 0 1px var(--bezel-ring)",
           }}
-          aria-label={isUpdate ? "Update today's log" : "Save today's log"}
         >
-          <span
-            className="text-base font-medium"
-            style={{ opacity: saveState === "saved" ? 0 : 1, transition: "opacity 200ms cubic-bezier(0.16,1,0.3,1)" }}
-          >
-            {isUpdate ? "Update" : "Save"}
-          </span>
+          {/* Inner highlight (glass only visible in light mode per CLAUDE.md spec) */}
+          <div style={{ position: "absolute", inset: 0, borderRadius: "24px", boxShadow: "var(--bezel-inset-shadow)", pointerEvents: "none" }} />
+          
+          {/* Left: Progress */}
+          <div style={{ flexShrink: 0, zIndex: 1 }}>
+            <ConditionProgress total={totalSymptomCount} completed={loggedSymptomCount} />
+          </div>
 
-          <span
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "14px",
-              fontFamily: "var(--font-body)",
-              opacity: saveState === "saved" ? 1 : 0,
-              transition: "opacity 200ms cubic-bezier(0.16,1,0.3,1)",
-              pointerEvents: "none",
+          {/* Right: Save Button */}
+          <motion.button
+            onClick={handleSave}
+            disabled={saveState === "saved" || totalSymptomCount === 0 || loggedSymptomCount < totalSymptomCount}
+            initial="rest"
+            whileHover={saveState !== "saved" && loggedSymptomCount === totalSymptomCount ? "hover" : "rest"}
+            whileTap={saveState !== "saved" && loggedSymptomCount === totalSymptomCount ? "tap" : "rest"}
+            variants={{
+              rest: { scale: 1 },
+              hover: { scale: 1.02 },
+              tap: { scale: 0.95 }
             }}
-            aria-hidden={saveState !== "saved"}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className={`group flex items-center gap-3 px-4 z-10 ${saveState !== "saved" && loggedSymptomCount === totalSymptomCount ? "shadow-[0_2px_8px_rgba(45,106,79,0.2)] tap-feedback" : ""}`}
+            style={{
+              height: "44px",
+              borderRadius: "16px",
+              backgroundColor: saveState === "saved" ? "var(--bg-surface)" : loggedSymptomCount === totalSymptomCount ? "var(--accent)" : "transparent",
+              color: saveState === "saved" ? "var(--accent)" : loggedSymptomCount === totalSymptomCount ? "#ffffff" : "var(--text-secondary)",
+              fontFamily: "var(--font-body)",
+              border: saveState === "saved" ? "1px solid var(--accent)" : loggedSymptomCount === totalSymptomCount ? "none" : "1px solid var(--border)",
+              cursor: (saveState === "saved" || loggedSymptomCount < totalSymptomCount) ? "default" : "pointer",
+              position: "relative",
+              boxShadow: (saveState === "saved" || loggedSymptomCount < totalSymptomCount) ? "none" : "inset 0 1px 1px rgba(255,255,255,0.4)"
+            }}
+            aria-label={isUpdate ? "Update log" : "Save log"}
           >
-            Saved
-          </span>
+            <span
+              className="text-[14px] font-semibold"
+              style={{ opacity: saveState === "saved" ? 0 : 1, transition: "opacity 200ms cubic-bezier(0.16,1,0.3,1)" }}
+            >
+              {isUpdate ? "Update" : "Save"}
+            </span>
 
-          <span
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px"
-            style={{ flexShrink: 0 }}
-            aria-hidden="true"
-          >
-            {saveState === "saved" ? (
-              <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                <polyline points="1,5 4.5,8.5 11,1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <polyline points="4,2 8,6 4,10" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </span>
-        </motion.button>
+            <span
+              style={{
+                position: "absolute",
+                left: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                fontSize: "14px",
+                fontWeight: 600,
+                fontFamily: "var(--font-body)",
+                opacity: saveState === "saved" ? 1 : 0,
+                transition: "opacity 200ms cubic-bezier(0.16,1,0.3,1)",
+                pointerEvents: "none",
+              }}
+              aria-hidden={saveState !== "saved"}
+            >
+              Saved
+            </span>
+
+            <span
+              className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${loggedSymptomCount === totalSymptomCount && saveState !== "saved" ? "group-hover:translate-x-0.5 group-hover:-translate-y-px bg-black/10 group-hover:bg-white/20" : ""}`}
+              style={{ flexShrink: 0 }}
+              aria-hidden="true"
+            >
+              {saveState === "saved" ? (
+                <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                  <polyline points="1,5 4.5,8.5 11,1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </span>
+          </motion.button>
+        </div>
       </div>
 
+
       <div className="max-w-[480px] mx-auto px-4 md:px-0">
-        <button
+        <motion.button
+          initial="rest"
+          whileHover="hover"
+          whileTap="tap"
+          variants={{
+            rest: { scale: 1 },
+            hover: { scale: 1.02 },
+            tap: { scale: 0.98 }
+          }}
           onClick={() => setShowManager(true)}
-          className="w-full flex items-center justify-center gap-3 px-5 py-4 mt-6 mb-12 rounded-[1.25rem] border border-[--border] text-[--text-primary] bg-white group hover:bg-[#FAFAF8] active:scale-[0.98] transition-all duration-150"
+          className="w-full flex flex-row items-center justify-between gap-3 px-5 py-4 mt-6 mb-12 rounded-[1.25rem] text-white bg-[--accent] transition-colors duration-150 shadow-sm"
           style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
         >
-          <span className="font-body font-medium text-[15px]">Edit Conditions & Symptoms</span>
-        </button>
+          <div className="flex-1 flex justify-center">
+            <span className="font-body font-medium text-[15px] ml-9">Edit Conditions & Symptoms</span>
+          </div>
+          <span className="w-8 h-8 rounded-full bg-black/[0.12] flex items-center justify-center pointer-events-none">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 7H11M11 7L7.5 3.5M11 7L7.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+        </motion.button>
       </div>
 
       </div>

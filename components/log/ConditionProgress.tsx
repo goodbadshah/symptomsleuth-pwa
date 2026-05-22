@@ -1,5 +1,7 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
+
 interface Props {
   total: number;
   completed: number;
@@ -14,6 +16,7 @@ export default function ConditionProgress({ total, completed }: Props) {
   if (total <= 0) return null;
 
   const pct = Math.min(100, Math.round((completed / total) * 100));
+  const numWidth = `${String(total).length}ch`;
 
   return (
     <div
@@ -25,43 +28,64 @@ export default function ConditionProgress({ total, completed }: Props) {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "10px",
+        gap: "12px",
         flexShrink: 0,
       }}
     >
       <div
         style={{
           position: "relative",
-          width: "84px",
-          height: "6px",
+          width: "120px",
+          height: "8px",
           borderRadius: "999px",
           backgroundColor: "var(--border)",
           overflow: "hidden",
         }}
       >
-        <div
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.8 }}
           style={{
             position: "absolute",
             inset: 0,
-            width: `${pct}%`,
             backgroundColor: "var(--accent)",
             borderRadius: "999px",
-            transition: "width 500ms cubic-bezier(0.32, 0.72, 0, 1)",
           }}
         />
       </div>
-      <span
+      <div
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: "11px",
-          color: "var(--text-secondary)",
+          fontSize: "14px",
+          fontWeight: 600,
+          color: "var(--text-primary)",
           letterSpacing: "0.03em",
           fontVariantNumeric: "tabular-nums",
           whiteSpace: "nowrap",
+          display: "flex",
+          alignItems: "center",
+          gap: "2px",
         }}
       >
-        {completed} / {total}
-      </span>
+        <div style={{ position: "relative", width: numWidth, display: "inline-flex", justifyContent: "flex-end" }}>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={completed}
+              initial={{ y: 12, opacity: 0, scale: 0.8 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -12, opacity: 0, scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              style={{ display: "inline-block", position: "absolute" }}
+            >
+              {completed}
+            </motion.span>
+          </AnimatePresence>
+          {/* Invisible placeholder to maintain width if position: absolute makes it layout poorly, though width is hardcoded */}
+          <span style={{ visibility: "hidden" }}>{completed}</span>
+        </div>
+        <span style={{ color: "var(--text-secondary)", fontWeight: 500, margin: "0 2px" }}>/</span>
+        <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{total}</span>
+      </div>
     </div>
   );
 }

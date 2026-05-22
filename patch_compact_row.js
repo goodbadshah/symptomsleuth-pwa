@@ -1,140 +1,80 @@
-const fs = require('fs');
-const file = 'components/log/SymptomWizard.tsx';
-let content = fs.readFileSync(file, 'utf8');
+  const fs = require('fs');
+  const file = 'app/(app)/log/page.tsx';
+  let content = fs.readFileSync(file, 'utf8');
 
-// Fix ActiveRow value flash
-content = content.replace(
-  "{justSaved && value > 0 && (",
-  "{justSaved && value !== undefined && value >= 0 && ("
-);
+  // We want to remove the `<ConditionProgress>` from the top header
+  content = content.replace(/<ConditionProgress\s+total=\{totalSymptomCount\}\s+completed=\{loggedSymptomCount\}\s*\/>/g, '');
 
-// Replace CompactRow function completely
-const compactRowRegex = /function CompactRow\(\{[\s\S]*?\}\) \{[\s\S]*?return \([\s\S]*?<\/[a-z]+>\s*\);\s*\}/m;
-content = content.replace(compactRowRegex, `function CompactRow({
-  symptom,
-  value,
-  state,
-  onJump,
-  isLast,
-  showUpNextLabel,
-}: {
-  symptom: Symptom;
-  value: number;
-  state: "done" | "upcoming";
-  onJump: () => void;
-  isLast: boolean;
-  showUpNextLabel: boolean;
-}) {
-  const [hover, setHover] = useState(false);
-  const isDone = state === "done";
-  const hasSeverity = isDone && value >= 0;
-  const displayValue = Math.min(value, 4);
-
-  const SOLID_BGS = [
-    "var(--severity-1)",
-    "var(--severity-2)",
-    "var(--severity-3)",
-    "var(--severity-4)",
-    "var(--severity-5)"
-  ];
-
-  const bgColor = hasSeverity 
-    ? SOLID_BGS[displayValue]
-    : hover ? "rgba(0,0,0,0.015)" : "transparent";
-
-  const nameColor = hasSeverity 
-    ? "#ffffff" 
-    : isDone ? "var(--text-primary)" : "var(--text-secondary)";
-    
-  const glyphColor = hasSeverity
-    ? "#ffffff"
-    : value >= 0 && isDone ? "var(--text-primary)" : "var(--text-secondary)";
-    
-  const secondaryColor = hasSeverity 
-    ? "rgba(255,255,255,0.7)" 
-    : "var(--text-secondary)";
-
-  const opacity = isDone ? 1 : 0.6;
-  const scale = isDone ? 1 : 0.98;
-  const filter = isDone ? "none" : "blur(0.5px)";
-  const valueLabel = isDone ? CHIP_LABELS[displayValue] : "";
-
-  return (
-    <button
-      type="button"
-      onClick={onJump}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      className="tap-feedback"
-      aria-label={\`Edit \${symptom.name}\`}
-      style={{
-        position: "relative",
-        display: "block",
-        width: "100%",
-        padding: "16px 14px",
-        margin: "0 0 2px 0",
-        borderRadius: "0px",
-        border: hasSeverity ? "1px solid transparent" : "1px solid var(--border)",
-        backgroundColor: bgColor,
-        cursor: "pointer",
-        textAlign: "left",
-        WebkitTapHighlightColor: "transparent",
-        opacity,
-        transform: \`scale(\${scale})\`,
-        filter,
-        transformOrigin: "left center",
-        transition: "opacity 300ms ease, transform 300ms cubic-bezier(0.16,1,0.3,1), filter 300ms ease, background-color 200ms ease",
-        minHeight: "44px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-        <p
+  content = content.replace(/<button[^>]*onClick=\{handleSave\}[^>]*>[\s\S]*?<\/button>/g, `
+      {/* Sticky Bottom Action Bar */}
+      <div 
+        className="fixed bottom-[env(safe-area-inset-bottom,24px)] left-0 right-0 z-50 pointer-events-none"
+        style={{
+          padding: "0 16px",
+          display: "flex",
+          justifyContent: "center"
+        }}
+      >
+        <div 
+          className="pointer-events-auto"
           style={{
-            fontSize: "16px",
-            fontWeight: hasSeverity ? 500 : 400,
-            color: nameColor,
-            fontFamily: "var(--font-body)",
-            margin: 0,
-            flex: 1,
-            lineHeight: 1.1,
+            maxWidth: "800px",
+            width: "100%",
+            backgroundColor: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid var(--border)",
+            borderRadius: "24px",
+            padding: "8px 8px 8px 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.06), 0 0 0 1px rgba(255,255,255,0.6) inset"
           }}
         >
-          {symptom.name}
-        </p>
+          {/* Left: Progress */}
+          <div style={{ flexShrink: 0 }}>
+            <ConditionProgress total={totalSymptomCount} completed={loggedSymptomCount} />
+          </div>
 
-        {isDone ? (
-          <span
+          {/* Right: Save Button */}
+          <button
+            onClick={handleSave}
+            className="group active:scale-[0.98] focus:outline-none"
             style={{
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
-              gap: "8px",
-              color: glyphColor,
-              fontWeight: hasSeverity ? 600 : 400,
-              fontSize: "14px",
+              gap: "12px",
+              padding: "0 16px 0 20px",
+              height: "44px",
+              backgroundColor: "var(--accent)",
+              color: "#ffffff",
+              borderRadius: "16px",
               fontFamily: "var(--font-body)",
-              lineHeight: 1.1,
+              fontSize: "15px",
+              fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
+              transition: "transform 150ms cubic-bezier(0.16,1,0.3,1), background-color 150ms",
+              boxShadow: "inset 0 1px 1px rgba(255,255,255,0.4), 0 2px 4px rgba(45,106,79,0.2)",
             }}
           >
-            <SeverityGlyph value={value} size={14} />
-            <span style={{ color: hasSeverity ? "#ffffff" : "var(--text-secondary)" }}>
-              {valueLabel}
+            <span>{saveState === "saved" ? "Saved" : existingLog ? "Update log" : "Save log"}</span>
+            <span
+              className="w-7 h-7 rounded-full bg-black/[0.12] flex items-center justify-center
+                         group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-[1.05]
+                         transition-transform duration-150"
+              style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
+            >
+              {saveState === "saved" ? (
+                <CheckCircle size={14} weight="bold" />
+              ) : (
+                <ArrowRight size={14} weight="bold" />
+              )}
             </span>
-          </span>
-        ) : showUpNextLabel ? (
-          <span
-            style={{
-              fontSize: "13px",
-              color: "var(--text-secondary)",
-              letterSpacing: "0.02em",
-            }}
-          >
-            Up next
-          </span>
-        ) : null}
+          </button>
+        </div>
       </div>
-    </button>
-  );
-}`);
-
-fs.writeFileSync(file, content);
-console.log('patched');
+  `);
+  
+  fs.writeFileSync(file, content);
