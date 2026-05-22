@@ -732,13 +732,21 @@ export default function LogPage() {
 
 
       <div className="max-w-[480px] mx-auto px-4 md:px-0">
-        <button
+        <motion.button
+          initial="rest"
+          whileHover="hover"
+          whileTap="tap"
+          variants={{
+            rest: { scale: 1 },
+            hover: { scale: 1.02 },
+            tap: { scale: 0.98 }
+          }}
           onClick={() => setShowManager(true)}
-          className="w-full flex items-center justify-center gap-3 px-5 py-4 mt-6 mb-12 rounded-[1.25rem] border border-[--border] text-[--text-primary] bg-transparent hover:bg-[--bezel-outer-bg] active:scale-[0.98] transition-all duration-150"
+          className="w-full flex items-center justify-center gap-3 px-5 py-4 mt-6 mb-12 rounded-[1.25rem] border border-[--border] text-[--text-primary] bg-transparent hover:bg-[--bezel-outer-bg] transition-colors duration-150"
           style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
         >
           <span className="font-body font-medium text-[15px]">Edit Conditions & Symptoms</span>
-        </button>
+        </motion.button>
       </div>
 
       </div>
