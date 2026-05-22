@@ -205,7 +205,7 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                   }}
                   onClick={handleContinueStep1}
                   disabled={selectedConditions.size === 0}
-                  className="w-full flex items-center justify-between gap-3 px-5 py-[14px] rounded-[1.25rem] disabled:opacity-50 disabled:cursor-not-allowed group transition-shadow duration-150 shadow-[0_4px_14px_rgba(45,106,79,0.2)] hover:shadow-[0_6px_20px_rgba(45,106,79,0.3)] bg-[--accent] text-white"
+                  className="w-full flex items-center justify-between gap-3 px-5 py-[14px] rounded-[1.25rem] disabled:opacity-50 disabled:cursor-not-allowed group transition-colors duration-150 shadow-sm bg-[--accent] text-white"
                   style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
                 >
                   <span className="font-body font-medium text-[15px]">Next: Edit Symptoms</span>
@@ -314,7 +314,7 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                       tap: { scale: 0.98 }
                     }}
                     onClick={handleSave}
-                    className="flex-[2] flex items-center justify-between gap-3 px-5 py-[14px] rounded-[1.25rem] group transition-shadow duration-150 shadow-[0_4px_14px_rgba(45,106,79,0.2)] hover:shadow-[0_6px_20px_rgba(45,106,79,0.3)] bg-[--accent] text-white"
+                    className="flex-[2] flex items-center justify-between gap-3 px-5 py-[14px] rounded-[1.25rem] group transition-colors duration-150 shadow-sm bg-[--accent] text-white"
                     style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
                   >
                     <span className="font-body font-medium text-[15px]">Save Changes</span>
