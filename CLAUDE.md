@@ -57,9 +57,9 @@ Apply this to:
 
 **Minimum text sizes:** Instructional/helper body text (subheadings under section headers, field-level hints) minimum **14px**. Chip and control labels minimum **12px**. The 10px size is reserved exclusively for uppercase eyebrow pill tags (tracked, all-caps). Never use 10–11px for readable prose or instructional copy.
 
-**Color & Theme:** Almost monochromatic. Warm off-white (#FAFAF8) base, warm grays for text, single sage green accent (#2D6A4F). The ONLY polychromatic element is the severity scale (green → yellow → orange → red). This constraint is intentional: by keeping everything else quiet, the severity colors become the most meaningful visual element on screen.
+**Color & Theme:** Almost monochromatic. Warm paper base (#F7F6EF — "Editorial Stationery"), warm grays for text, single sage green accent (#2D6A4F). The ONLY polychromatic element is the severity scale, which runs **green → blue → gold → orange → red** (severity-1 through severity-5). The blue at severity-2 is deliberate — it widens chromatic distance between Mild and Medium so the chip row reads clearly at a glance, and it is the only non-warm hue permitted in the app. Everything else stays quiet so the severity colors carry meaning.
 
-**Motion:** Fluid, tactile, and highly responsive. Use `framer-motion` for spring physics. Buttons and severity chips should have satisfying "squish" physics (`scale` interactions). Context menus and modals use swipeable spring bottom-sheets. Charts and elements should sweep into view using staggered spring animations. **Never animate `top`, `left`, `width`, or `height` via CSS - use Framer Motion layout animations or exclusively animate `transform` and `opacity`.**
+**Motion:** Fluid, tactile, and highly responsive. Use `framer-motion` for spring physics on tactile micro-interactions — chip taps, button presses, modal entries. Buttons and severity chips have satisfying "squish" physics (`scale` interactions). Context menus and modals use swipeable spring bottom-sheets. Charts and section entries use staggered scroll-in animations on the cubic-bezier curves below (not springs — springs are reserved for tactile feedback). **Never animate `top`, `left`, `width`, or `height` via CSS - use Framer Motion layout animations or exclusively animate `transform` and `opacity`.**
 
 **Spatial Composition:** Responsive and adaptive. Desktop utilizes a two-column sidebar/main stage layout with masonry-like grids for condition viewing. Mobile maintains a layered, scrollable feed. Generous negative space everywhere. 
 
@@ -93,7 +93,9 @@ The glyph set:
 - **Moderate-low** (severity 2): two 2.5px filled dots, stacked vertically with 2px gap. Density: two units.
 - **Moderate** (severity 3): three 2.5px filled dots arranged in a tight triangle (one top, two bottom). Density: three units.
 - **Severe** (severity 4): a 7px filled circle with a thin 1px outer ring at 10px diameter. Density: pressurized single mark.
-- **Extreme** (severity 5 / legacy scale max): the severe glyph with a second outer ring at 13px diameter - concentric pressure.
+- **Extreme** (legacy value=5 only): the severe glyph with a second outer ring at 13px diameter - concentric pressure.
+
+**Chip → glyph mapping:** `SeverityChipSelector` ships five chips (values 0–4) mapped to glyphs `None → Mild → ModerateLow → Moderate → Severe`. The Extreme glyph is reserved for rendering legacy `value: 5` entries in TimelineChart and the Doctor Report — it never appears on a chip. Do not "fix" the chip selector by remapping it; the mapping is intentional and aligned with the 0–4 chip scale.
 
 Glyphs render at `currentColor` so they inherit the chip's text color (which shifts with selection state). They are authored, unified, and the signature visual element of the severity system - reuse them in Timeline tooltips, Insights summaries, and the Doctor Report header. Never substitute emoji, emoticons, or Phosphor Icons for severity indication.
 
@@ -126,15 +128,15 @@ UI text must be minimal. Claude Code will always err toward more words - resist 
 
 - No basic/flat color buttons if a dynamic state makes sense (use glowing states for selected severity)
 - No rounded-everything pill shapes (selective use of border-radius, not universal)
-- No jerky/linear animations - motion must use physics-based fluid springs (`framer-motion`)
+- No jerky/linear animations - tactile interactions use framer-motion springs; scroll/section entries use the cubic-bezier curves in Transitions
 - No emoji as UI elements - use Phosphor Icons (@phosphor-icons/react) or clean inline SVGs
 - No emoticon faces (😊 😐 😖) anywhere - severity is expressed via the Severity Glyph System (see Frontend Aesthetics), never via faces. Faces read as pediatric pain-scale posters and undermine the "refined medical tool for adults" positioning.
 - No "wellness app" pastel palette. Only use vibrant, saturated colors for active/selected states.
 - No noise/grain textures on interactive surfaces (cards, chips, buttons, inputs, modals, text containers). Paper-grain noise at ≤0.04 opacity on the base background shell is permitted and specified - see Backgrounds & Visual Details.
-- No card-heavy layouts - see Grouping Patterns above. Cards only for actionable grouped units.
+- No card-heavy layouts as default grouping - see Grouping Patterns above. When elevation is justified, the container must use the Double-Bezel architecture; cards stay reserved for independently actionable units (swipe, long-press, tap-as-unit).
 - No generic health iconography (hearts, plus signs, stethoscopes)
 - No pure black (#000000) - use `--text-primary` (#1A1A1A)
-- No AI purple/blue aesthetic - no neon gradients, no glowing box-shadows
+- No AI purple/blue aesthetic - no neon gradients, no neon box-shadows on cards or buttons. The severity-chip pulse/glow defined in Backgrounds & Visual Details is the one sanctioned glow effect — do not strip it.
 - Always embrace fully saturated colors for active/selected states, ensuring text stays pure `#ffffff` white against them.
 - No generic 3-column equal card rows for feature sections
 - No generic placeholder data - use realistic, messy numbers (47.2%, not 99.99%)
@@ -207,30 +209,33 @@ These patterns mark text as AI-generated and erode the authored, editorial voice
 
 ### Design Tokens
 
-**Colors:**
+**Colors ("Editorial Stationery" palette — current aesthetic benchmark):**
 
 ```css
---bg-primary: #FAFAF8        /* warm off-white */
+--bg-primary: #F7F6EF        /* warm paper */
 --bg-surface: #FFFFFF
+--header-bg: #2D6A4F          /* deep sage band on global App Header (darkens to surface in dark mode) */
 --text-primary: #1A1A1A
 --text-secondary: #6B6B6B
 --accent: #2D6A4F             /* deep sage green */
 --accent-light: #D8F3DC
 --severity-0-fill: transparent          /* unlogged - no fill */
---severity-0-border: #8E8E8E;           /* warm light gray ring - unlogged state */
---severity-1: #2E7D32;                  /* Vibrant Mild */
---severity-2: #FFB300;                  /* Vibrant Moderate */
---severity-3: #F57C00;                  /* Vibrant Severe */
---severity-4: #D32F2F;                  /* Vibrant Significant */
---severity-5: #B71C1C;                  /* Vibrant Extreme */
---context-slider-low: #D1D1CE          /* neutral warm gray - context sliders only */
---context-slider-high: #4A4A4A         /* dark warm gray - context sliders only */
+--severity-0-border: #737373            /* richer grey ring - unlogged state */
+--severity-1: #00A36C                   /* Rich Green - Mild */
+--severity-2: #007AFF                   /* True Blue - Medium (only non-warm hue in the app) */
+--severity-3: #FFB600                   /* Rich Gold - Severe-low */
+--severity-4: #F95700                   /* Rich Orange - Severe */
+--severity-5: #E60000                   /* Rich Red - Extreme (legacy value=5 only; chips top out at 4) */
+--context-slider-low: #D1D1CE          /* neutral warm gray - context sliders only (legacy) */
+--context-slider-high: #4A4A4A         /* dark warm gray - context sliders only (legacy) */
 --border: #E8E8E4
 --premium-locked: #F5F5F0
 --community: #4A90A4          /* muted teal for community insights */
 --paper-noise-opacity: 0.03   /* warm paper grain on base background only */
 --shadow: 0 1px 3px rgba(26,26,26,0.06)
 ```
+
+**Theme system:** All color decisions must reference CSS variables, never hardcoded hex. Dark mode is implemented as a token swap under `[data-theme="dark"]` and `@media (prefers-color-scheme: dark)` in `app/globals.css` — it is not a feature flag and not optional code. When tidying or auditing, do not delete dark-mode token overrides as orphan code.
 
 **CRITICAL - Severity visual states:**
 The distinction between severity-0 (unlogged/None) and severity-1 (Mild) must always be visually unambiguous. Unlogged = absence of data. Mild = a real reading. The severity color scale (green → red) is semantically reserved for symptom severity only. Context fields (sleep quality, stress level) share the SeverityChipSelector for input; their stored values follow the same 1–4 scale (undefined when not captured). The `--context-slider-low` / `--context-slider-high` tokens are legacy and no longer used in production components.
@@ -258,7 +263,8 @@ The distinction between severity-0 (unlogged/None) and severity-1 (Mild) must al
 - Bottom sheets: `cubic-bezier(0.32, 0.72, 0, 1)` 300ms
 - Skeleton shimmer: CSS gradient animation, 2s cycle, ease-in-out (exception - shimmer only)
 - Countdown drain bars: `linear` timing permitted - a timer must deplete at a constant rate to read as a timer. Current use: `SaveConfirmModal` 4-second auto-dismiss bar.
-- BANNED: `linear` (except shimmer and countdown drain), `ease-in-out`, `ease-out`, spring physics, bounce, overshoot, any JS per-frame animation
+- Tactile spring physics (framer-motion) are REQUIRED on severity chips and primary CTAs - that is what gives the interface its "living journal" feel.
+- BANNED for scroll/section entries and CSS transitions: `linear` (except shimmer and countdown drain), `ease-in-out`, `ease-out`, overshoot, any JS per-frame animation. Springs are scoped to framer-motion micro-interactions only.
 
 ### Premium Craft Patterns
 
@@ -377,7 +383,7 @@ Apply to:
 
 ### Insights Tab Order
 
-The Insights segmented control renders tabs in this order: **Sleuth AI - Timeline - Community**. Sleuth AI is first because it is the premium differentiator; seeing it locked on every session drives conversion. Default active tab is Sleuth AI.
+The Insights segmented control renders tabs in this order: **Sleuth AI - Timeline - Community**. Sleuth AI is rendered first because it is the premium differentiator. **Default active segment on cold open is Timeline** — Timeline carries existing navigation muscle memory and is the lowest-friction surface for the daily reflective loop. The Sleuth AI segment is one tap away.
 - Paywall: feature list items, pricing options
 - Landing page: all sections
 
@@ -710,7 +716,7 @@ SYNC_SERVER_PEPPER=<random 32-byte hex string, generated at deploy time>
 A single global header renders at the top of every screen inside `app/(app)/layout.tsx`. It is the primary brand surface and must read clearly in UGC screen-recordings and screenshots.
 
 - **Height:** 72px fixed. Never collapses on scroll.
-- **Background:** `--accent` (#2D6A4F) at full saturation - the deep sage green is the brand's most memorable pigment and must stay bold for UGC recognition. Add a 1px bottom border in `--accent` at 60% brightness to give the band a subtle edge (not a hard line).
+- **Background:** `--header-bg` (defaults to `--accent` #2D6A4F at full saturation in light mode; swaps to a dark surface tone in dark mode). The deep sage green is the brand's most memorable pigment in light mode and must stay bold for UGC recognition. Add a 1px bottom border in `--accent` at 60% brightness to give the band a subtle edge (not a hard line).
 - **Wordmark:** Use the existing SymptomSleuth logomark - two-line "SYMPTOM SLEUTH" with the magnifying glass curling around the tail of the "S" (following the trail of symptoms). The mark is already authored and must NOT be recreated, redrawn, or substituted. Ship it as a static asset (`public/brand/wordmark.svg`) and render it via `components/brand/Wordmark.tsx` as a thin wrapper (simple `<img>` or inline include - no proportional changes, no restyling). Required sizing in the header: 48px tall, left-aligned with 20px left padding, vertically centered in the 72px band. The wordmark must remain clearly legible at header size for UGC screen-recordings and TikTok content.
 - **Streak badge (right side):** `StreakBadge` component, right-aligned with 20px right padding. Renders as a translucent white pill - `bg-white/20 backdrop-blur-sm` with 1px ring at `white/30`. Inside: a small inline-stroke SVG flame (14px, white fill) + DM Mono 12px number. Shows from Day 1. At 55% opacity when today has not been logged yet (motivational dimming). Eyebrow-adjacent in language: the number wears the authority, the flame is a whisper.
 - **NO icons, menu buttons, or other chrome in the header.** The wordmark and streak own the band. Navigation lives in the bottom nav only.
@@ -815,9 +821,9 @@ The chip selector replaces all sliders and circle buttons. 5 chips in a horizont
   - Severity Glyph from `utils/severityGlyphs.tsx` (12px, centered) - NOT an emoticon face, NOT a Phosphor icon
   - Label beneath: DM Sans 12px, weight 500
 - Chip dimensions: 64px wide × 56px tall (reduced from previous 72px height - tightens the row, feels more deliberate)
-- Resting state: `--bg-surface` inner core, `--text-primary` label, glyph at `--text-secondary`
-- Hover and Tap states: Button background fully floods with the deep, 100% thick, saturated primary color and the text instantly goes pure `#ffffff` white.
-- Selected state - claimed, not highlighted: Perfectly preserves that same heavy saturated core color and pure `#ffffff` white text. No fading to pastel, no text going back to dark gray.
+- Resting state: a 10% RGBA tint of the chip's own selected severity color over `--bg-surface`, with a 30%-opacity ring of the same hue. Label sits in `--text-primary`, glyph in `--text-secondary`. This is intentional — flat-white resting chips read as inert; tinted chips communicate "the row is alive." Do NOT replace the tint with `--bg-surface` flat fill.
+- Hover and Tap states: Background fully floods with the deep, 100% saturated severity color (no pastel, no fade). Label and glyph snap to pure `#ffffff` white.
+- Selected state - claimed, not highlighted: Preserves the heavy saturated core color and pure `#ffffff` white text. No fading to pastel, no text going back to dark gray.
 - On `:active` (press feedback): `translateY(0.5px)` + `shadow-[inset_0_1px_2px_rgba(0,0,0,0.08)]` - chip feels pressed into the paper. 150ms `cubic-bezier(0.16, 1, 0.3, 1)`.
 - Only one chip per symptom row can be selected at a time. Tapping a different chip commits the new value and animates the selected ring from old chip to new (opacity fade both, 200ms).
 - Hidden `<input type="radio">` group behind each row for accessibility. Chips are labeled radio buttons semantically.
@@ -992,7 +998,7 @@ The AIChat card is present but locked. This is a stronger paywall than the gener
 
 The Account tab surfaces auth, subscription, and settings - the chrome that previously had no permanent home in the four-tab nav.
 
-- **Auth state:** shows current auth method (Google, Facebook, or anonymous UUID). If anonymous: CTA "Sync your data" to connect Google/Facebook. If authenticated: email/provider shown in DM Mono small.
+- **Auth state:** shows current auth method (Google or email/password). Anonymous/UUID mode is retired and Facebook/Apple are deferred — do not add them back. Authenticated email/provider is shown in DM Mono small.
 - **Subscription:** current plan badge (trial / monthly / annual / lifetime / expired), trial or renewal date if applicable. "Manage plan" link → Stripe customer portal for annual and monthly subscribers only. Lifetime members show a "Lifetime Member ✦" badge with no manage link — the subscription has no renewal to manage.
 - **Settings:** Community data opt-in toggle wired to `profile.communityOptIn` via `SET_COMMUNITY_OPT_IN` dispatch.
 - **Data:** "Reset account" - two-tap confirmation; clears localStorage, routes to `/onboarding`. This action moves here from its previous location in Insights.
@@ -1066,14 +1072,7 @@ NO urgency tactics. NO countdown timers.
 app/
   layout.tsx
   page.tsx                    # landing (client) - hero + value props + returning-member sign-in
-  sitemap.ts
-  robots.ts
-  [conditionSlug]/
-    page.tsx                  # programmatic SEO condition pages
-  guides/
-    page.tsx
-    [guideSlug]/
-      page.tsx
+  providers.tsx               # client-side context providers mounted into the root layout
   onboarding/
     page.tsx                  # 3-step flow (condition → symptoms → trial confirmation)
     ConditionSelect.tsx
@@ -1081,24 +1080,25 @@ app/
     TrialConfirmation.tsx     # Screen 3 - CTA "Choose your plan" routes to /upgrade
   welcome/
     page.tsx                  # Post-checkout account setup (Google / email + password). Outside (app)/ so no bottom nav.
+  upgrade/
+    page.tsx                  # Paywall (annual / monthly / lifetime) - taps route to /welcome?plan=X
   auth/
     callback/page.tsx         # OAuth code exchange + post-signin routing (no magic-link mode logic)
     reset/page.tsx            # Password reset destination - exchanges recovery code, sets new password via updateUser
+  install/page.tsx            # PWA install instructions screen
+  offline/page.tsx            # Service-worker offline fallback page
   (app)/
     layout.tsx                # app shell with bottom nav (use client); guards onto /onboarding or /welcome
     log/page.tsx
-    timeline/page.tsx          # redirect('/insights') only - Timeline is a segment, not a standalone page
+    timeline/page.tsx         # redirect('/insights') only - Timeline is a segment, not a standalone page
     insights/page.tsx
     report/page.tsx
     account/page.tsx
-    settings/page.tsx
-    upgrade/page.tsx          # Paywall (annual / monthly / lifetime) - taps route to /welcome?plan=X
   api/
     generate-report/route.ts
     ai-chat/route.ts                  # Streaming SSE endpoint for AI Sleuth. Sonnet 4.5 with prompt caching.
     create-plan-intent/route.ts       # Returns { clientSecret, intentType } for inline Stripe Elements
     activate-plan/route.ts            # Creates customer + subscription (sub) or verifies PaymentIntent (lifetime)
-    create-portal/route.ts
     stripe-webhook/route.ts           # Post-activation subscription lifecycle only (no profile provisioning)
     community/
       submit/route.ts
@@ -1109,31 +1109,36 @@ lib/
 components/
   brand/
     Wordmark.tsx              # Thin wrapper around the existing /public/brand/wordmark.svg asset. Do NOT recreate the logo - it is authored and shipped as-is.
-  onboarding/                   # The onboarding UI lives in app/onboarding/, not components/. Listed here for cross-reference.
-    ConditionSelect.tsx
-    SymptomSetup.tsx
-    TrialConfirmation.tsx
   auth/
     ReturningMemberSignIn.tsx   # Google + email/password sign-in (with "Forgot password?") appended to the landing page for existing members.
   log/
-    DailyLog.tsx
     SeverityChipSelector.tsx  # THE canonical severity input - 5 chips, tap-to-commit. Used everywhere severity is captured (symptoms + context fields).
+    SeveritySelector.tsx      # Legacy wrapper retained for non-chip surfaces (e.g. context fields routing through the chip selector). Do NOT delete without auditing call sites.
+    SeveritySlider.tsx        # Legacy slider implementation retained for fallback / context-field rendering. Do NOT delete without auditing call sites.
     SymptomRow.tsx
+    SymptomWizard.tsx         # Multi-step add/edit symptom flow used in onboarding and account/settings.
     ConditionChapterMarker.tsx # Hairline + centered condition name editorial chapter-marker component
+    ConditionManagerModal.tsx # Bottom-sheet modal for adding/removing tracked conditions after onboarding.
+    ConditionProgress.tsx     # Per-condition progress strip shown inside the Log screen group headers.
     FoodTriggers.tsx          # 2-col chip grid, open by default, stores context.foodTriggers
     ContextFields.tsx
+    ToggleSwitch.tsx          # Boolean toggle used for the lone yes/no context field (exercise).
     SaveConfirmModal.tsx      # bottom sheet post-save modal, double-bezel, drain bar, random logMessage, streak pill
     Marginalia.tsx            # Right-aligned DM Mono micro-stat for symptom rows with ≥3 data points
   ui/
     StreakBadge.tsx           # fixed-position streak overlay on app header, rendered in (app)/layout.tsx
     PaperGround.tsx           # SVG noise overlay at --paper-noise-opacity, applied once in app shell root
+    MurmurationBackground.tsx # Ambient tsparticles canvas - see Backgrounds & Visual Details.
+    EyebrowTag.tsx            # Reusable pill eyebrow tag component (see Eyebrow Tags pattern).
+    FadeIn.tsx                # IntersectionObserver entry-animation wrapper (translateY + blur + opacity).
+    TrailingIcon.tsx          # Button-in-Button trailing icon circle (see Premium Craft Patterns).
+    ServiceWorkerRegister.tsx # Client-side registration for /public/sw.js.
   timeline/
     TimelineChart.tsx
     DateRangeSelector.tsx
     DailyLogList.tsx
     TimelineSegment.tsx       # Composable wrapper - combines the three above; rendered inside Insights as the default segment
   insights/
-    ConditionSelector.tsx
     AIPreviewCard.tsx         # State B: locked AI card with rotating sample question + skeleton answer preview
     ProgressToUnlock.tsx      # State B: quiet single-line strip showing loggedDays/totalLogs progress toward threshold
     AIChat.tsx                # State C: live AI chat surface - conversation area + input + suggested prompts
@@ -1143,65 +1148,65 @@ components/
     CorrelationCard.tsx
     ShareableInsight.tsx
     ThresholdMessage.tsx
-  report/
-    ReportGenerator.tsx
-    ReportDisplay.tsx
-  paywall/
-    UpgradeScreen.tsx
-  backup/
-    BackupButton.tsx
-    RestoreButton.tsx
-    PassphraseModal.tsx
   layout/
-    BottomNav.tsx
     AppHeader.tsx             # 72px global header band with Wordmark left + StreakBadge right
-    AppShell.tsx
 content/
-  conditions.ts
-  guides.ts
-  aiSampleQuestions.ts        # Rotating sample questions per condition, keyed by condition name. 6–10 per condition. Used by AIPreviewCard and AIChat suggested prompts.
+  aiSampleQuestions.ts        # Rotating sample questions per condition. Used by AIPreviewCard and AIChat suggested prompts.
 hooks/
-  useAppState.ts
   useStreak.ts              # calculateStreak() + useStreak() → { count, loggedToday }. Consumed by StreakBadge and log/page.tsx.
   useTrial.ts
-  useDailyLog.ts
   useCommunity.ts
-  useBackup.ts
   useInView.ts              # IntersectionObserver hook for scroll entry animations
   useAIAccess.ts            # { isAIThresholdMet, hasAIAccess, daysRemaining, logsRemaining, aiUnlockedAt } - consumed by Insights screen to route between States A/B/C/D
   useAIChat.ts              # Chat state management - turns, rate limit counter, send function, streaming response handler
 utils/
   storage.ts
-  trialLogic.ts
-  reportPrompt.ts
   symptoms.ts               # default symptom suggestions per condition. No 'type' field.
-  severityGlyphs.tsx        # 5 inline SVG components (None/Mild/ModerateLow/Moderate/Severe/Extreme). Authored abstract marks - see Severity Glyph System. Render at currentColor.
-  crypto.ts
+  severityGlyphs.tsx        # 6 inline SVG components (None/Mild/ModerateLow/Moderate/Severe/Extreme). Authored abstract marks - see Severity Glyph System. Render at currentColor.
   anonymize.ts
   community.ts
   logMessages.ts            # 40 post-save messages (15 encouraging, 15 tips, 10 insight). pickRandomMessage().
   aiSystemPrompt.ts         # System prompt for /api/ai-chat - medical safety scaffolding, pattern framing, emergency redirect rules
   aiPreviewStats.ts         # Client-side computation of data-derived teaser insights for State D. Zero API spend. Used by AILockedPreview.
   migrateLocalData.ts       # One-shot migration from localStorage to Supabase after account setup at /welcome. Keeps localStorage on failure.
+  hydrateFromSupabase.ts    # Inverse of migrateLocalData - pulls server profile back into local state on sign-in from a fresh device.
+  generateDemoData.ts       # Seeded demo data generator used in development and onboarding previews.
+  timelineData.ts           # Pure helpers for shaping logs into TimelineChart series.
+supabase/
+  migrations/                 # SQL migrations (profiles, daily_logs, encrypted_profiles, wrapped_keys).
+  functions/compute-aggregates/  # Scheduled edge function rebuilding ConditionAggregate rows.
 public/
   manifest.json
+  sw.js                       # Service worker (registered by ServiceWorkerRegister).
+  brand/wordmark.svg          # Authored logomark - ship as-is, do not recreate.
   icons/
 ```
 
-### SEO & AEO
+**Roadmap (not yet implemented):** Programmatic SEO routes (`app/[conditionSlug]/`, `app/guides/[guideSlug]/`), encrypted client-side backup UI (`components/backup/`, `useBackup`, `utils/crypto.ts`), and Stripe customer-portal route (`api/create-portal/`) are planned but not on disk. Do not scaffold them as part of unrelated work; they are tracked separately in the SEO & AEO and Zero-Knowledge Sync sections.
 
-**Programmatic SEO pages** - 12 condition-specific pages at /[conditionSlug]. Each: condition-specific heading and copy, common symptoms list, community stat if above threshold, 5–8 FAQ pairs with JSON-LD (FAQPage schema), WebApplication and MedicalCondition JSON-LD, generateStaticParams().
+## Roadmap: SEO & AEO (not yet implemented)
 
-**AEO guide pages** - 5 guides at /guides/[guideSlug]:
+This section is the spec for a dedicated future SEO pass. Do **not** scaffold these routes, content files, or components as part of unrelated work — they ship together so JSON-LD, sitemap, and copy stay coherent.
+
+**Prerequisite (real blocker):** the code is ~1 day of work; the copy is the project. The build is blocked until `content/conditions.ts` (per-condition heading, common-symptoms list, 5–8 FAQ pairs × 12 conditions) and `content/guides.ts` (5 guides at 400–600 words each) are authored. Until those exist, every page renders empty shells with no indexable content.
+
+**Build order (when the content is ready):**
+1. **AEO guide pages first** (`app/guides/page.tsx`, `app/guides/[guideSlug]/page.tsx`). Pure server components, zero data dependencies, simplest JSON-LD shape (Article). Ships independently and gives us a test surface for the schema markup before the condition pages compound the risk.
+2. **Programmatic condition pages** (`app/[conditionSlug]/page.tsx`). Depends on `content/conditions.ts` AND on community aggregates being above the 50-user threshold — below threshold the community-stat block must render the same fallback copy as the in-app Insights screen, not be omitted.
+3. **`app/sitemap.ts` and `app/robots.ts`** last, once the final URL set is locked.
+
+**Programmatic SEO pages** — 12 condition-specific pages at `/[conditionSlug]`. Each: condition-specific heading and copy, common symptoms list, community stat if above threshold (else fallback copy), 5–8 FAQ pairs with JSON-LD (FAQPage schema), WebApplication and MedicalCondition JSON-LD, `generateStaticParams()`.
+
+**AEO guide pages** — 5 guides at `/guides/[guideSlug]`:
 - how-to-track-symptoms-for-doctor
 - what-to-bring-to-specialist-appointment
 - symptom-diary-vs-symptom-tracker
 - how-to-describe-pain-to-doctor
 - why-doctors-want-symptom-data
 
-Each: server component, generateMetadata(), JSON-LD Article schema, 400–600 words, natural CTA.
+Each: server component, `generateMetadata()`, JSON-LD Article schema, 400–600 words, natural in-context CTA to the trial.
 
-**Technical SEO:** Dynamic sitemap, robots.ts, canonical URLs, all content server-rendered.
+**Technical SEO:** Dynamic sitemap, `robots.ts`, canonical URLs, all content server-rendered.
 
 ## Privacy & Data Ethics
 
