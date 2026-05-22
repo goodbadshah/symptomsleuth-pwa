@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { DailyContext } from "@/app/providers";
 
 const FOOD_TRIGGERS = [
@@ -134,44 +135,84 @@ export default function FoodTriggers({ value, onChange }: Props) {
               <div className="flex flex-wrap gap-2">
                 {FOOD_TRIGGERS.map((trigger) => {
                   const isSelected = selected.has(trigger);
+                  
+                  const restingBoxShadow = "0 0 0 1px var(--bezel-ring)";
+                  const selectedBoxShadow = "0 0 0 1px var(--bg-primary), 0 0 0 2.5px var(--accent)";
+                  
                   return (
-                    <button
+                    <motion.button
                       key={trigger}
                       onClick={() => toggle(trigger)}
-                      className="active:scale-[0.98] group flex-none relative"
+                      type="button"
+                      role="checkbox"
+                      aria-checked={isSelected}
+                      initial="rest"
+                      whileHover="hover"
+                      whileTap="tap"
+                      animate={isSelected ? "selected" : "rest"}
+                      variants={{
+                        rest: { scale: 1, boxShadow: restingBoxShadow, backgroundColor: "var(--bezel-outer-bg)" },
+                        hover: { scale: 1.04, boxShadow: isSelected ? selectedBoxShadow : restingBoxShadow, backgroundColor: "var(--bg-primary)" },
+                        tap: { scale: 0.90 },
+                        selected: { scale: 1, boxShadow: selectedBoxShadow, backgroundColor: "var(--bg-primary)" }
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 700,
+                        damping: 25,
+                      }}
                       style={{
+                        flex: "none",
+                        position: "relative",
                         height: "56px",
                         padding: "3px",
                         borderRadius: "12px",
-                        boxShadow: isSelected
-                          ? "0 0 0 1px var(--bg-primary), 0 0 0 2.5px var(--accent)"
-                          : "0 0 0 1px var(--bezel-ring)",
-                        backgroundColor: isSelected
-                          ? "var(--bg-primary)"
-                          : "var(--bezel-outer-bg)",
-                        transition:
-                          "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), background-color 200ms cubic-bezier(0.16,1,0.3,1), transform 150ms",
                         cursor: "pointer",
                         border: "none",
                         outline: "none",
                         WebkitTapHighlightColor: "transparent",
                       }}
-                      aria-pressed={isSelected}
                     >
                       {/* Inner core */}
-                      <div
-                        className="flex items-center justify-center relative overflow-hidden"
+                      <motion.div
+                        variants={{
+                          rest: { backgroundColor: isSelected ? "var(--accent)" : "var(--bg-surface)", color: isSelected ? "#ffffff" : "var(--text-secondary)" },
+                          hover: { backgroundColor: "var(--accent)", color: "#ffffff" },
+                          tap: { backgroundColor: "var(--accent)", color: "#ffffff" },
+                          selected: { backgroundColor: "var(--accent)", color: "#ffffff" }
+                        }}
                         style={{
                           height: "100%",
                           padding: "0 16px",
-                          backgroundColor: isSelected ? "var(--accent)" : "var(--bg-surface)",
-                          color: isSelected ? "#ffffff" : "var(--text-secondary)",
-                          boxShadow: "var(--bezel-inset-shadow)",
+                          boxShadow: isSelected
+                            ? "var(--bezel-inset-shadow), inset 0 1px 2px rgba(0,0,0,0.06)"
+                            : "var(--bezel-inset-shadow)",
                           borderRadius: "9px",
-                          transition:
-                            "background-color 200ms cubic-bezier(0.16,1,0.3,1), color 200ms cubic-bezier(0.16,1,0.3,1)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          position: "relative",
+                          overflow: "hidden",
                         }}
                       >
+                        {/* Animated Glow Layer strictly inside the chip for center pulse */}
+                        <AnimatePresence>
+                          <motion.div
+                            variants={{
+                              rest: { opacity: 0, scale: 0.9 },
+                              hover: { opacity: [0.6, 0.9, 0.6], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } },
+                              selected: { opacity: [0.8, 1, 0.8], scale: [0.98, 1.05, 0.98], transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } }
+                            }}
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              background: `radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 85%)`,
+                              zIndex: 0,
+                              pointerEvents: "none",
+                            }}
+                          />
+                        </AnimatePresence>
+
                         <span
                           style={{
                             fontSize: "14px",
@@ -185,8 +226,8 @@ export default function FoodTriggers({ value, onChange }: Props) {
                         >
                           {trigger}
                         </span>
-                      </div>
-                    </button>
+                      </motion.div>
+                    </motion.button>
                   );
                 })}
               </div>
