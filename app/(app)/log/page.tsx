@@ -742,13 +742,13 @@ export default function LogPage() {
             tap: { scale: 0.98 }
           }}
           onClick={() => setShowManager(true)}
-          className="w-full flex flex-row items-center justify-between gap-3 px-5 py-4 mt-6 mb-12 rounded-[1.25rem] border border-[--border] text-[--text-primary] bg-[--bg-surface] hover:bg-[--bezel-outer-bg] transition-colors duration-150 shadow-sm"
+          className="w-full flex flex-row items-center justify-between gap-3 px-5 py-4 mt-6 mb-12 rounded-[1.25rem] text-white bg-[--accent] transition-colors duration-150 shadow-sm"
           style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
         >
           <div className="flex-1 flex justify-center">
             <span className="font-body font-medium text-[15px] ml-9">Edit Conditions & Symptoms</span>
           </div>
-          <span className="w-8 h-8 rounded-full bg-[--bezel-ring] flex items-center justify-center pointer-events-none">
+          <span className="w-8 h-8 rounded-full bg-black/[0.12] flex items-center justify-center pointer-events-none">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 7H11M11 7L7.5 3.5M11 7L7.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>

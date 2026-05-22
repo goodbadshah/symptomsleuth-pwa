@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppState } from "@/app/providers";
 import type { Symptom } from "@/app/providers";
@@ -51,6 +51,7 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
   const [selectedConditions, setSelectedConditions] = useState<Set<string>>(new Set());
   const [workingSymptoms, setWorkingSymptoms] = useState<(Symptom & { enabled: boolean })[]>([]);
   const [addName, setAddName] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,6 +68,11 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
     const symptoms = getInitialSymptoms(conditionsArr, state.profile.symptoms || []);
     setWorkingSymptoms(symptoms);
     setStep(2);
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 10);
   }
 
   function handleSave() {
@@ -116,6 +122,7 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
           />
 
           <motion.div
+            ref={scrollRef}
             className="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[85vh] overflow-y-auto bg-[--bg-primary] rounded-t-[1.5rem] shadow-xl mx-auto max-w-[800px]"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
