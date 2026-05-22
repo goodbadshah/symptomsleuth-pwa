@@ -1184,20 +1184,29 @@ public/
 
 **Roadmap (not yet implemented):** Programmatic SEO routes (`app/[conditionSlug]/`, `app/guides/[guideSlug]/`), encrypted client-side backup UI (`components/backup/`, `useBackup`, `utils/crypto.ts`), and Stripe customer-portal route (`api/create-portal/`) are planned but not on disk. Do not scaffold them as part of unrelated work; they are tracked separately in the SEO & AEO and Zero-Knowledge Sync sections.
 
-### SEO & AEO
+## Roadmap: SEO & AEO (not yet implemented)
 
-**Programmatic SEO pages** - 12 condition-specific pages at /[conditionSlug]. Each: condition-specific heading and copy, common symptoms list, community stat if above threshold, 5–8 FAQ pairs with JSON-LD (FAQPage schema), WebApplication and MedicalCondition JSON-LD, generateStaticParams().
+This section is the spec for a dedicated future SEO pass. Do **not** scaffold these routes, content files, or components as part of unrelated work — they ship together so JSON-LD, sitemap, and copy stay coherent.
 
-**AEO guide pages** - 5 guides at /guides/[guideSlug]:
+**Prerequisite (real blocker):** the code is ~1 day of work; the copy is the project. The build is blocked until `content/conditions.ts` (per-condition heading, common-symptoms list, 5–8 FAQ pairs × 12 conditions) and `content/guides.ts` (5 guides at 400–600 words each) are authored. Until those exist, every page renders empty shells with no indexable content.
+
+**Build order (when the content is ready):**
+1. **AEO guide pages first** (`app/guides/page.tsx`, `app/guides/[guideSlug]/page.tsx`). Pure server components, zero data dependencies, simplest JSON-LD shape (Article). Ships independently and gives us a test surface for the schema markup before the condition pages compound the risk.
+2. **Programmatic condition pages** (`app/[conditionSlug]/page.tsx`). Depends on `content/conditions.ts` AND on community aggregates being above the 50-user threshold — below threshold the community-stat block must render the same fallback copy as the in-app Insights screen, not be omitted.
+3. **`app/sitemap.ts` and `app/robots.ts`** last, once the final URL set is locked.
+
+**Programmatic SEO pages** — 12 condition-specific pages at `/[conditionSlug]`. Each: condition-specific heading and copy, common symptoms list, community stat if above threshold (else fallback copy), 5–8 FAQ pairs with JSON-LD (FAQPage schema), WebApplication and MedicalCondition JSON-LD, `generateStaticParams()`.
+
+**AEO guide pages** — 5 guides at `/guides/[guideSlug]`:
 - how-to-track-symptoms-for-doctor
 - what-to-bring-to-specialist-appointment
 - symptom-diary-vs-symptom-tracker
 - how-to-describe-pain-to-doctor
 - why-doctors-want-symptom-data
 
-Each: server component, generateMetadata(), JSON-LD Article schema, 400–600 words, natural CTA.
+Each: server component, `generateMetadata()`, JSON-LD Article schema, 400–600 words, natural in-context CTA to the trial.
 
-**Technical SEO:** Dynamic sitemap, robots.ts, canonical URLs, all content server-rendered.
+**Technical SEO:** Dynamic sitemap, `robots.ts`, canonical URLs, all content server-rendered.
 
 ## Privacy & Data Ethics
 
