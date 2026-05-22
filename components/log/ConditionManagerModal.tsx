@@ -195,23 +195,26 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                 </div>
                 
                 <motion.button
-                  initial="rest"
-                  whileHover="hover"
-                  whileTap="tap"
-                  variants={{
-                    rest: { scale: 1 },
-                    hover: { scale: 1.02 },
-                    tap: { scale: 0.98 }
-                  }}
                   onClick={handleContinueStep1}
                   disabled={selectedConditions.size === 0}
-                  className="w-full flex items-center justify-between gap-3 px-5 py-[14px] rounded-[1.25rem] disabled:opacity-50 disabled:cursor-not-allowed group transition-colors duration-150 shadow-sm bg-[--accent] text-white"
-                  style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
+                  whileHover={selectedConditions.size > 0 ? { scale: 1.02 } : undefined}
+                  whileTap={selectedConditions.size > 0 ? { scale: 0.98 } : undefined}
+                  className={`group w-full relative flex items-center justify-center px-5 tap-feedback ${selectedConditions.size > 0 ? "shadow-[0_4px_14px_rgba(45,106,79,0.2)]" : ""}`}
+                  style={{
+                    height: "56px",
+                    borderRadius: "1.25rem",
+                    backgroundColor: selectedConditions.size > 0 ? "var(--accent)" : "var(--border)",
+                    color: selectedConditions.size > 0 ? "#ffffff" : "var(--text-secondary)",
+                    cursor: selectedConditions.size > 0 ? "pointer" : "not-allowed",
+                    fontFamily: "var(--font-body)",
+                    border: "none",
+                    transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
+                  }}
                 >
-                  <span className="font-body font-medium text-[15px]">Next: Edit Symptoms</span>
-                  <span className="w-8 h-8 rounded-full bg-black/[0.12] flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px transition-transform duration-150">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 7H11M11 7L7.5 3.5M11 7L7.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <span className="text-[15px] font-medium">Next: Edit Symptoms</span>
+                  <span className="absolute right-5 w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                 </motion.button>
@@ -305,22 +308,25 @@ export default function ConditionManagerModal({ isOpen, onClose }: Props) {
                   </button>
 
                   <motion.button
-                    initial="rest"
-                    whileHover="hover"
-                    whileTap="tap"
-                    variants={{
-                      rest: { scale: 1 },
-                      hover: { scale: 1.02 },
-                      tap: { scale: 0.98 }
-                    }}
                     onClick={handleSave}
-                    className="flex-[2] flex items-center justify-between gap-3 px-5 py-[14px] rounded-[1.25rem] group transition-colors duration-150 shadow-sm bg-[--accent] text-white"
-                    style={{ transitionTimingFunction: "cubic-bezier(0.16,1,0.3,1)" }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex-[2] relative flex items-center justify-center px-5 tap-feedback shadow-[0_4px_14px_rgba(45,106,79,0.2)] group"
+                    style={{
+                      height: "56px",
+                      borderRadius: "1.25rem",
+                      backgroundColor: "var(--accent)",
+                      color: "#ffffff",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-body)",
+                      border: "none",
+                      transition: "background-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
+                    }}
                   >
-                    <span className="font-body font-medium text-[15px]">Save Changes</span>
-                    <span className="w-8 h-8 rounded-full bg-black/[0.12] flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-px transition-transform duration-150">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11.6667 3.5L5.25004 9.91667L2.33337 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <span className="text-[15px] font-medium">Save Changes</span>
+                    <span className="absolute right-5 w-7 h-7 rounded-full flex items-center justify-center bg-black/10 group-hover:bg-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <polyline points="4,2 8,6 4,10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </span>
                   </motion.button>
