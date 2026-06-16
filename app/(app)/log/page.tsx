@@ -16,6 +16,8 @@ import ConditionChapterMarker from "@/components/log/ConditionChapterMarker";
 import ConditionProgress from "@/components/log/ConditionProgress";
 import SymptomWizard from "@/components/log/SymptomWizard";
 import ConditionManagerModal from "@/components/log/ConditionManagerModal";
+import InsightStrip from "@/components/log/InsightStrip";
+import { useAIAccess } from "@/hooks/useAIAccess";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────────────────
 
@@ -137,6 +139,7 @@ function SymptomGroup({
 export default function LogPage() {
   const { state, dispatch } = useAppState();
   const { symptoms, conditions, communityOptIn } = state.profile;
+  const { progressiveInsightLevel, daysRemaining } = useAIAccess();
 
   const today = todayLocalDate();
   const heading = formatHeading(today);
@@ -423,9 +426,19 @@ export default function LogPage() {
 
   return (
     <div style={{ minHeight: "100dvh", paddingBottom: "50vh", "--sticky-offset": "150px" } as React.CSSProperties}>
+      {/* Insight Strip - above-the-fold lead surface */}
+      <div className="max-w-[800px] mx-auto px-4 md:px-8 pt-4 md:pt-6">
+        <InsightStrip
+          logs={state.logs}
+          conditions={conditions}
+          level={progressiveInsightLevel}
+          daysRemaining={daysRemaining}
+        />
+      </div>
+
       {/* Date Header Block */}
       <div>
-        <div className="max-w-[800px] mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-4">
+        <div className="max-w-[800px] mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-4">
           <h1
             style={{
               fontFamily: "var(--font-display)",
