@@ -18,6 +18,7 @@ import SymptomWizard from "@/components/log/SymptomWizard";
 import ConditionManagerModal from "@/components/log/ConditionManagerModal";
 import InsightStrip from "@/components/log/InsightStrip";
 import { useAIAccess } from "@/hooks/useAIAccess";
+import { computePostSaveDelta } from "@/utils/aiPreviewStats";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────────────────
 
@@ -391,6 +392,7 @@ export default function LogPage() {
   const [showModal, setShowModal] = useState(false);
   const [showManager, setShowManager] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<LogMessage | null>(null);
+  const [currentDelta, setCurrentDelta] = useState<string | null>(null);
   const { count: streak } = useStreak();
 
   const handleSave = useCallback(() => {
@@ -419,10 +421,13 @@ export default function LogPage() {
     setSaveState("saved");
     setTimeout(() => setSaveState("idle"), 800);
 
-    // Post-save modal - random message on every successful save
+    // Post-save modal - prefer a data-derived delta, fall back to a random message.
+    const nextLogs = [...state.logs.filter((l) => l.date !== log.date), log];
+    const delta = computePostSaveDelta(nextLogs, log.date, conditions);
+    setCurrentDelta(delta);
     setCurrentMessage(pickRandomMessage());
     setShowModal(true);
-  }, [symptoms, entries, context, note, today, dispatch, communityOptIn]);
+  }, [symptoms, entries, context, note, today, dispatch, communityOptIn, state.logs, conditions]);
 
   return (
     <div style={{ minHeight: "100dvh", paddingBottom: "50vh", "--sticky-offset": "150px" } as React.CSSProperties}>
@@ -776,6 +781,7 @@ export default function LogPage() {
         onDismiss={() => setShowModal(false)}
         message={currentMessage}
         streak={streak}
+        delta={currentDelta}
       />
       <ConditionManagerModal
         isOpen={showManager}
