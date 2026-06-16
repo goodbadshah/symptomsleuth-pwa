@@ -10,6 +10,8 @@ interface Props {
   onDismiss: () => void;
   message: LogMessage | null;
   streak: number;
+  /** Optional data-derived insight - when provided, replaces the random message heading. */
+  delta?: string | null;
 }
 
 /**
@@ -26,7 +28,7 @@ interface Props {
  * - No bounce, no spring, no JS per-frame animation
  * - Auto-dismisses via setTimeout, not a polling interval
  */
-export default function SaveConfirmModal({ isOpen, onDismiss, message, streak }: Props) {
+export default function SaveConfirmModal({ isOpen, onDismiss, message, streak, delta }: Props) {
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
@@ -125,8 +127,29 @@ export default function SaveConfirmModal({ isOpen, onDismiss, message, streak }:
               padding: "20px 20px 16px",
             }}
           >
-            {/* Streak pill - only shown when streak ≥ 1 */}
-            {streak >= 1 && (
+            {/* Eyebrow row - either INSIGHT (when delta) or DAY {streak} (legacy) */}
+            {delta ? (
+              <div style={{ marginBottom: "10px" }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    borderRadius: "9999px",
+                    padding: "2px 10px",
+                    backgroundColor: "var(--accent-light)",
+                    fontSize: "10px",
+                    fontFamily: "var(--font-body)",
+                    fontWeight: 500,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.15em",
+                    color: "var(--accent)",
+                  }}
+                >
+                  Insight
+                </span>
+              </div>
+            ) : (
+              streak >= 1 && (
               <div style={{ marginBottom: "14px" }}>
                 <span
                   style={{
@@ -175,9 +198,10 @@ export default function SaveConfirmModal({ isOpen, onDismiss, message, streak }:
                   </span>
                 </span>
               </div>
+              )
             )}
 
-            {/* Message heading - Fraunces */}
+            {/* Message heading - Fraunces. Replaced by delta when provided. */}
             <p
               style={{
                 fontFamily: "var(--font-display)",
@@ -188,10 +212,11 @@ export default function SaveConfirmModal({ isOpen, onDismiss, message, streak }:
                 lineHeight: 1.2,
               }}
             >
-              {message.heading}
+              {delta ?? message.heading}
             </p>
 
-            {/* Message body - DM Sans */}
+            {/* Message body - DM Sans. Suppressed when showing a delta. */}
+            {!delta && (
             <p
               style={{
                 fontFamily: "var(--font-body)",
@@ -203,6 +228,20 @@ export default function SaveConfirmModal({ isOpen, onDismiss, message, streak }:
             >
               {message.body}
             </p>
+            )}
+            {delta && (
+              <p
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: "13px",
+                  lineHeight: 1.55,
+                  color: "var(--text-secondary)",
+                  margin: "0 0 18px",
+                }}
+              >
+                Pattern picked up from your logs. Tap Insights to dig in.
+              </p>
+            )}
 
             {/* Dismiss hint */}
             <p

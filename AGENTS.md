@@ -61,7 +61,7 @@ const AI_CONFIG = {
 ### Access Requirements
 
 AI Sleuth unlocks when both conditions are met:
-- **Data Threshold**: ≥14 logged days AND ≥20 total symptom entries
+- **Data Threshold**: ≥14 logged days AND ≥15 total symptom entries (the chat surface only; statistical insights surface from day 3 onward via `aiPreviewStats.ts`)
 - **Premium Status**: Active subscription or trial period
 
 **Rationale**: Prevents low-signal users from experiencing poor AI responses that could damage trust.

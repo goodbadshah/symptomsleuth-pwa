@@ -1,20 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getISOWeek } from "date-fns";
 import { useAppState } from "@/app/providers";
 import { useAIAccess } from "@/hooks/useAIAccess";
 import { useTrial } from "@/hooks/useTrial";
 import TimelineSegment from "@/components/timeline/TimelineSegment";
 import CommunityOverview from "@/components/insights/CommunityOverview";
-import AIPreviewCard from "@/components/insights/AIPreviewCard";
-import ProgressToUnlock from "@/components/insights/ProgressToUnlock";
 import AIChat from "@/components/insights/AIChat";
 import AILockedPreview from "@/components/insights/AILockedPreview";
+import InsightHeadlineCard from "@/components/insights/InsightHeadlineCard";
+import SleuthNoticedCard from "@/components/insights/SleuthNoticedCard";
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Local helper components
+// Empty state - day 0, no logs yet
 // ──────────────────────────────────────────────────────────────────────────────
 
 function EmptyTrailState() {
@@ -99,170 +97,123 @@ function EmptyTrailState() {
   );
 }
 
-interface HeroDateBlockProps {
-  heading: string;
-  secondary: string;
-}
+// ──────────────────────────────────────────────────────────────────────────────
+// Section heading - editorial eyebrow + Fraunces title
+// ──────────────────────────────────────────────────────────────────────────────
 
-function HeroDateBlock({ heading, secondary }: HeroDateBlockProps) {
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <div style={{ padding: "32px 20px 8px" }}>
+    <div style={{ padding: "0 20px", marginBottom: 8 }}>
       <p
         style={{
+          fontFamily: "var(--font-body)",
+          fontSize: 10,
+          fontWeight: 500,
+          textTransform: "uppercase",
+          letterSpacing: "0.15em",
+          color: "var(--text-secondary)",
+          margin: "0 0 4px",
+          lineHeight: 1,
+        }}
+      >
+        {eyebrow}
+      </p>
+      <h2
+        style={{
           fontFamily: "var(--font-display)",
-          fontSize: "44px",
+          fontSize: 22,
           fontWeight: 400,
           color: "var(--text-primary)",
           margin: 0,
-          lineHeight: 1.1,
+          lineHeight: 1.2,
         }}
       >
-        {heading}
-      </p>
-      <p
-        style={{
-          fontFamily: "var(--font-display)",
-          fontSize: "44px",
-          fontWeight: 400,
-          color: "var(--text-primary)",
-          margin: 0,
-          lineHeight: 1.1,
-        }}
-      >
-        {secondary}
-      </p>
-    </div>
-  );
-}
-
-type Segment = "timeline" | "ai" | "community";
-
-interface InsightsSegmentedControlProps {
-  active: Segment;
-  onChange: (s: Segment) => void;
-}
-
-function InsightsSegmentedControl({ active, onChange }: InsightsSegmentedControlProps) {
-  const segments: { id: Segment; label: string }[] = [
-    { id: "ai", label: "Sleuth AI" },
-    { id: "timeline", label: "Timeline" },
-    { id: "community", label: "Community" },
-  ];
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        padding: "0 20px",
-        borderBottom: "1px solid var(--border)",
-        marginBottom: 0,
-      }}
-    >
-      {segments.map((seg) => {
-        const isActive = active === seg.id;
-        return (
-          <button
-            key={seg.id}
-            onClick={() => onChange(seg.id)}
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "13px",
-              fontWeight: 500,
-              color: isActive ? "var(--accent)" : "var(--text-secondary)",
-              background: "none",
-              border: "none",
-              borderBottom: isActive
-                ? "2px solid var(--accent)"
-                : "2px solid transparent",
-              padding: "8px 0",
-              cursor: "pointer",
-              marginBottom: -1,
-              transition: "color 200ms cubic-bezier(0.16,1,0.3,1), border-color 200ms cubic-bezier(0.16,1,0.3,1)",
-              height: 36,
-              flex: 1,
-              textAlign: "center",
-            }}
-          >
-            {seg.label}
-          </button>
-        );
-      })}
+        {title}
+      </h2>
     </div>
   );
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Main page
+// Main page - stacked narrative layout (replaces the segmented control)
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function InsightsPage() {
   const { state } = useAppState();
   const { logs, profile } = state;
-  const { isAIThresholdMet, hasAIAccess, loggedDaysCount, daysRemaining, logsRemaining, totalLogEntries } =
-    useAIAccess();
+  const {
+    hasAIAccess,
+    isAIThresholdMet,
+    loggedDaysCount,
+    daysRemaining,
+    progressiveInsightLevel,
+  } = useAIAccess();
   const { isPremium } = useTrial();
-  const [activeSegment, setActiveSegment] = useState<Segment>("ai");
 
-  const condition = profile.conditions[0] ?? "Other";
-  const weekNumber = getISOWeek(new Date());
-  const hasNoLogs = loggedDaysCount === 0;
+  // Day 0 - single composed empty state, no other surfaces.
+  if (loggedDaysCount === 0) {
+    return (
+      <div style={{ paddingBottom: 24 }}>
+        <EmptyTrailState />
+      </div>
+    );
+  }
+
+  // Pick which Sleuth surface to render at the bottom of the page.
+  let sleuthSurface: React.ReactNode = null;
+  if (hasAIAccess) {
+    sleuthSurface = <AIChat loggedDaysCount={loggedDaysCount} />;
+  } else if (isAIThresholdMet && !isPremium) {
+    sleuthSurface = <AILockedPreview logs={logs} conditions={profile.conditions} />;
+  } else if (progressiveInsightLevel !== "none") {
+    sleuthSurface = (
+      <SleuthNoticedCard
+        logs={logs}
+        conditions={profile.conditions}
+        daysRemaining={daysRemaining}
+        loggedDaysCount={loggedDaysCount}
+      />
+    );
+  }
 
   return (
-    <div style={{ paddingBottom: 24 }}>
-      {/* Hero */}
-      <HeroDateBlock
-        heading="Insights"
-        secondary={hasNoLogs ? "No entries yet" : `Week ${Math.max(1, Math.ceil(loggedDaysCount / 7))}`}
-      />
+    <div
+      style={{
+        paddingBottom: 80,
+        display: "flex",
+        flexDirection: "column",
+        gap: 28,
+      }}
+    >
+      {/* 1. Hero headline - the answer */}
+      <div style={{ padding: "24px 16px 0" }}>
+        <InsightHeadlineCard logs={logs} conditions={profile.conditions} />
+      </div>
 
-      {/* Segmented control */}
-      <InsightsSegmentedControl active={activeSegment} onChange={setActiveSegment} />
-
-      {/* Timeline segment */}
-      {activeSegment === "timeline" && (
+      {/* 2. Timeline - the evidence */}
+      <section>
+        <SectionHeading eyebrow="THE EVIDENCE" title="Timeline" />
         <TimelineSegment logs={logs} symptoms={profile.symptoms} isPremium={isPremium} />
-      )}
+      </section>
 
-      {/* AI segment - four internal states (empty state rendered inline when no logs) */}
-      {activeSegment === "ai" && (
-        <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
-          {hasNoLogs && <EmptyTrailState />}
-          {!hasNoLogs && hasAIAccess && <AIChat loggedDaysCount={loggedDaysCount} />}
-          {!hasNoLogs && isAIThresholdMet && !isPremium && (
-            <AILockedPreview logs={logs} conditions={profile.conditions} />
-          )}
-          {!hasNoLogs && !isAIThresholdMet && (
-            <>
-              <AIPreviewCard
-                condition={condition}
-                weekNumber={weekNumber}
-                daysRemaining={daysRemaining}
-                logsRemaining={logsRemaining}
-              />
-              <ProgressToUnlock
-                daysRemaining={daysRemaining}
-                logsRemaining={logsRemaining}
-                loggedDaysCount={loggedDaysCount}
-                totalLogEntries={totalLogEntries}
-              />
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Community segment */}
-      {activeSegment === "community" && (
-        <div style={{ padding: "20px 16px" }}>
+      {/* 3. Community - the context */}
+      <section>
+        <SectionHeading eyebrow="THE CONTEXT" title="Community" />
+        <div style={{ padding: "0 20px" }}>
           <CommunityOverview conditions={profile.conditions} />
         </div>
-      )}
+      </section>
 
-      {/* Legacy placeholder block removed - reset action moved to Account page */}
+      {/* 4. Sleuth - the conversation */}
+      {sleuthSurface && (
+        <section>
+          <SectionHeading
+            eyebrow={hasAIAccess ? "ASK SLEUTH" : "WHAT SLEUTH SEES"}
+            title={hasAIAccess ? "Your sleuth" : "Patterns so far"}
+          />
+          <div style={{ padding: "0 16px" }}>{sleuthSurface}</div>
+        </section>
+      )}
     </div>
   );
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Legacy shim - keep old unused exports working until fully removed
-// ──────────────────────────────────────────────────────────────────────────────
-// (none needed - file is fully replaced)

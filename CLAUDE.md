@@ -381,9 +381,22 @@ Apply to:
 - Timeline: chart and daily log list items
 - Insights: correlation cards, comparison bars
 
-### Insights Tab Order
+### Insights Layout (stacked, no segmented control)
 
-The Insights segmented control renders tabs in this order: **Sleuth AI - Timeline - Community**. Sleuth AI is rendered first because it is the premium differentiator. **Default active segment on cold open is Timeline** — Timeline carries existing navigation muscle memory and is the lowest-friction surface for the daily reflective loop. The Sleuth AI segment is one tap away.
+The Insights screen is a single scrollable narrative, not a tabbed surface. The order is fixed: **headline → evidence → context → conversation**. The segmented control (Sleuth AI / Timeline / Community) was removed - tabs fragmented the narrative and hid two-thirds of the value behind chrome. The graph is now the *receipt* for the headline insight, never the lead.
+
+Top-to-bottom on `app/(app)/insights/page.tsx` for any user with ≥1 logged day:
+
+1. **InsightHeadlineCard** - Fraunces 26px headline from `computeProgressiveInsight()`. Always present from day 1+.
+2. **TimelineSegment** - the chip-row range selector, the `TimelineSummary` headline (Fraunces 18px), then the chart and daily log list.
+3. **CommunityOverview** - free for all users, condition-aware threshold messaging when below 50 community members.
+4. **Sleuth surface** (the chat, or its accrual stand-in) - one of:
+   - `AIChat` when `hasAIAccess`
+   - `AILockedPreview` when threshold met but not premium
+   - `SleuthNoticedCard` when `progressiveInsightLevel` is `seedling` or `growing`
+   - hidden when `progressiveInsightLevel === 'none'` (the InsightStrip on Log handles day 0–2 messaging)
+
+Each section is preceded by an editorial section heading: 10px DM Sans uppercase tracked eyebrow + 22px Fraunces title. The eyebrow names the function (`THE EVIDENCE`, `THE CONTEXT`), the title names the surface (`Timeline`, `Community`).
 - Paywall: feature list items, pricing options
 - Landing page: all sections
 
@@ -457,7 +470,7 @@ interface AppState {
     trialEndsAt?: string;           // ISO date - createdAt + 7 or 14 days, set by Stripe
     premium: PremiumStatus;
     communityOptIn: boolean;        // defaults to true. Toggle lives in Settings → Privacy only.
-    aiUnlockedAt?: string;          // ISO date - first moment loggedDays >= 14 AND totalLogs >= 20
+    aiUnlockedAt?: string;          // ISO date - first moment loggedDays >= 14 AND totalLogs >= 15
     aiUsage?: AIUsage;              // rolling-24h message counter, client-side rate-limit state
   };
   logs: DailyLog[];
@@ -558,10 +571,19 @@ interface Correlation {
 
 ### AI Sleuth - Access, Cost, and Safety
 
-**Access model:**
-- AI chat ("Sleuth") unlocks when `loggedDaysCount >= 14` AND `totalLogEntries >= 20`, AND user is premium.
-- The dual data gate prevents low-signal users from hitting a useless AI experience that damages trust.
-- Previews and data-derived teasers shown below threshold are computed client-side from localStorage - zero API spend on non-premium or below-threshold users.
+**Access model (hybrid accrual, gates the chat surface only):**
+
+| Days logged | What the user gets | Powered by |
+|---|---|---|
+| 0–2 | Progress strip on Insights + InsightStrip on Log ("Building your trail") | Local counter |
+| 3–4 | First observation - worst day, etc. (`seedling` level) | `aiPreviewStats.ts` (free) |
+| 5–13 | Real correlations from logged data (`growing` level) - SleuthNoticedCard accrues bullets | `aiPreviewStats.ts` (free) |
+| 14+ | Conversational chat unlocks for premium users; non-premium see AILockedPreview with a real teaser | Claude Sonnet 4.5 (paid) |
+
+- AI **chat** ("Sleuth") unlocks when `loggedDaysCount >= 14` AND `totalLogEntries >= 15`, AND the user is premium. The chat surface is the only thing gated behind the threshold.
+- The 15-entry floor (down from the original 20) lets a user logging 3 symptoms for 5 days clear the entries gate quietly while the day-count remains the gate they intuit.
+- Statistical insights are surfaced from day 3 onward via `aiPreviewStats.ts` - zero Claude API spend on non-premium or below-threshold users.
+- Below threshold the `progressiveInsightLevel` from `useAIAccess` (`none | seedling | growing | mature`) drives every insight surface in the app.
 
 **Model and cost:**
 - Model: `claude-sonnet-4-5-20250929` (Sonnet 4.5). Sonnet over Haiku because chronic illness reasoning quality directly affects trust and safety - pattern recognition across symptoms, medication mentions, and "see a doctor" flags.
@@ -606,7 +628,7 @@ isPremium:
 isAIThresholdMet:
   - loggedDaysCount = count of distinct YYYY-MM-DD dates in logs[]
   - totalLogEntries = sum of entries.length across logs[]
-  - Returns (loggedDaysCount >= 14) AND (totalLogEntries >= 20)
+  - Returns (loggedDaysCount >= 14) AND (totalLogEntries >= 15)
   - When this first returns true, set profile.aiUnlockedAt = now()
 
 hasAIAccess:
@@ -622,7 +644,7 @@ If NOT isPremium:
   - Multi-condition: locked to first condition only
 
 If NOT isAIThresholdMet (regardless of premium):
-  - Insights screen: shows State B preview (AIPreviewCard + ProgressToUnlock + Community). AI chat surface is NOT interactive yet.
+  - Insights screen: shows the stacked narrative with a real `InsightHeadlineCard` at the top, the Timeline (with summary headline), Community, and the `SleuthNoticedCard` accrual surface at the bottom. Chat input is not interactive yet.
 
 Community access rationale:
   - Insights is now the default landing tab from day 4 onward (see Insights screen spec).
@@ -787,6 +809,16 @@ On successful sign-up or Google sign-in at `/welcome`:
 
 The Log screen is now an editorial journal entry. Top-to-bottom layout inside the main content area (beneath the global App Header):
 
+**InsightStrip (above the fold, every state):**
+
+Directly under the AppHeader, before the date hero, sits a tappable double-bezel card that turns every visit into an answer-shaped surface. Routes to `/insights` on tap. Content is driven by `progressiveInsightLevel` from `useAIAccess` and `computeProgressiveInsight()` from `aiPreviewStats.ts`:
+- **none (0–2 days):** "BUILDING YOUR TRAIL" eyebrow + "{N} day(s) logged. Sleuth needs a few more to find a pattern." + 14-day progress bar with `loggedDays/14` counter.
+- **seedling (3–4):** "FIRST PATTERN" eyebrow + first observation (e.g., "Your worst day so far was Tuesday"). Progress bar still visible.
+- **growing (5–13):** "WHAT SLEUTH SEES" eyebrow + the strongest correlation `aiPreviewStats` can compute. Progress bar still visible.
+- **mature (14+):** "SLEUTH" eyebrow (accent variant) + the live insight headline. CTA on the right reads "Ask Sleuth" with an accent-filled trailing icon circle.
+
+The strip is the lead surface of the entire app - every visit teaches the user that taps become sentences.
+
 **Hero date treatment (Fraunces 44px, weight 400):**
 - Primary line: full date in Fraunces - "Tuesday, April 21"
 - Secondary line beneath, DM Mono 12px `--text-secondary`: dynamic context string
@@ -872,119 +904,73 @@ For every symptom row with ≥3 logged data points in the user's history:
 
 **3. Timeline (composable segment within Insights)**
 
-Timeline is NOT a standalone page route. Its components live in `components/timeline/` and are rendered inside the Insights screen as the default-selected segment. The `/timeline` URL is a redirect to `/insights` - it has no page component of its own and there is no Timeline tab in the bottom nav.
+Timeline is NOT a standalone page route. Its components live in `components/timeline/` and are rendered inside the Insights screen as the second section in the stacked layout (below `InsightHeadlineCard`). The `/timeline` URL is a redirect to `/insights` - it has no page component of its own and there is no Timeline tab in the bottom nav.
 
-- Date range tabs: 7D, 30D, 90D, All - text tabs with underline indicator, not pills
+- Date range chips: 7D, 30D, 90D, All - 4-chip grid using the `SeverityChipSelector` visual language (~48px tall, double-bezel, selected state floods with `--accent` and white text). Replaces the previous 13px underline tabs that violated the 48px tap-target rule.
+- `TimelineSummary` component above the chart: Fraunces 18px headline derived from `computeTimelineSummary()` ("Last 7 days: avg severity 2.4, 1 spike on Tuesday"). The chart is no longer mute - it has a verbal answer above it.
 - Recharts AreaChart: smooth curves, filled area at 0.1–0.15 opacity (watercolor, not block)
 - X-axis: DM Sans, secondary color, small. Y-axis: severity 1–5, minimal faint grid lines.
 - All symptoms are severity lines (no binary toggle markers - toggle type removed)
 - Remove all default Recharts chrome; restyle to match app aesthetic
 - Context overlay: small icons along x-axis (moon, lightning, running figure) - 12px, secondary color, below chart
 - Below chart: scrollable list of daily log cards as borderless rows with bottom dividers
-- Non-premium: 7D only, older data blurred with CSS backdrop-filter + "Unlock" CTA
+- Non-premium: 7D only, locked range chips show an inline lock icon and refuse selection.
 
-**4. Insights (AI Sleuth + Community) - primary reflective surface**
+**4. Insights (the daily reflective surface) - stacked narrative, no tabs**
 
 This is the daily "what is my data telling me?" surface. From day 4 onward, this is the default landing tab on cold app open (see Default Landing Tab Logic).
 
-**Architecture - segmented control:** Insights is a single screen with three segments navigated by a compact segmented control rendered directly below the HeroDateBlock in all non-empty states:
-
-- **Timeline** (default) - the date-range chart and daily log list. Uses the composable `TimelineSegment` wrapper from `components/timeline/`. Default-selected on every cold open to preserve existing navigation muscle memory.
-- **AI** - the Sleuth AI surface. Contains the four states (A/B/C/D) defined below, based on data threshold and premium status.
-- **Community** - shows `CommunityOverview` from `components/insights/`. Free for all users.
-
-The segmented control uses text tabs with an underline indicator in `--accent` (same visual language as the date range tabs). Not pills. Compact row, ~36px height, DM Sans 13px weight 500.
-
-The four states below (A/B/C/D) describe the **AI segment** exclusively. Community always shows CommunityOverview when that segment is active. Timeline always shows the TimelineSegment (with its own premium date-range gate).
+The screen is a single scrollable layout - the segmented control was removed (see "Insights Layout"). The flow reads as headline → evidence → context → conversation. The chart is the receipt for the headline, not the lead.
 
 **State A - Day 0 (0 logs)**
 
-Single composed empty state. No AI teaser yet - the user hasn't earned the anticipation, and showing a locked AI card on day 0 signals "this app is full of walls."
+Single composed empty state. No AI teaser yet - the user hasn't earned the anticipation.
 
 - Fraunces 44px weight 400: "Your journey starts with one tap."
-- DM Mono 12px `--text-secondary` secondary line beneath: "Log today to begin."
+- DM Mono 12px `--text-secondary`: "Log today to begin."
 - 64px spacer
 - Primary CTA (sage green, button-in-button trailing arrow): "Start logging" → routes to /log
-- Centered, generous whitespace. No feature preview. No countdown.
 
-**State B - Days 1–13 OR below AI threshold (the Preview State)**
+**Sleuth surface by progressive level (states B–D)**
 
-This is the conversion-and-habit screen. It must do three jobs simultaneously: show community value immediately, teach the AI mental model, and create anticipation for the unlock.
+For any user with ≥1 logged day, the page renders the four stacked sections (InsightHeadlineCard → TimelineSegment → CommunityOverview → Sleuth surface). The Sleuth surface at the bottom is the only thing that varies:
 
-Vertical layout, top to bottom (inside the main content area, beneath the App Header):
+- **`progressiveInsightLevel === 'none'` (days 1–2):** Sleuth surface is hidden. The InsightHeadlineCard at the top of the page already says "{N} day(s) logged. Sleuth needs a few more to find a pattern." The InsightStrip on the Log screen carries the same message - duplication is intentional, the user should hear it from both surfaces.
+- **`'seedling'` (days 3–4) and `'growing'` (days 5–13):** Renders `SleuthNoticedCard` - a "What Sleuth has noticed" accrual card with bullets from `computeSleuthNoticedBullets()`. The card visibly fills up each week (1 bullet → 2 → 3) instead of teasing a fixed unlock date. Bullet count caps at 3.
+- **`'mature'` + premium:** Renders the live `AIChat` surface. Section eyebrow becomes "ASK SLEUTH" and title "Your sleuth".
+- **`'mature'` + not premium:** Renders `AILockedPreview` - data-derived teaser sentence + blurred answer preview + "Unlock Sleuth" CTA → /upgrade.
 
-1. **Hero date/status header** - Fraunces 44px: dynamic text
-   - "Your sleuth - Week {N}" where N = `Math.ceil(loggedDaysCount / 7)`, minimum 1
-   - DM Mono 12px `--text-secondary` below: "{loggedDaysCount} days logged · {totalLogEntries} entries"
+**InsightHeadlineCard (always rendered when ≥1 day logged):**
 
-2. **AIPreviewCard** (the hook - topmost section, most visual weight)
-   - Double-bezel container (outer shell + inner core + inset highlight, per Premium Craft Patterns)
-   - Eyebrow pill (neutral variant - `bg-[--border]` with `text-[--text-secondary]`): "ASK SLEUTH - UNLOCKS IN {X} DAYS"
-     - X = `Math.max(0, 14 - loggedDaysCount)`. At 0: "ASK SLEUTH - NEEDS MORE LOGS" (means days threshold met but totalLogEntries < 20).
-   - Fraunces 22px weight 400: a rotating sample question in first-person voice. Question rotates by ISO week number + primary condition - deterministic, so a given user sees a new question each week.
-   - Examples per condition (write 6–10 per condition in `content/aiSampleQuestions.ts`):
-     - Migraine: "What do my evening severity spikes have in common?" / "Is my sleep quality correlated with my headache days?" / "Which food triggers show up most on my worst days?"
-     - IBS: "What am I eating on my flare days?" / "Is stress a bigger trigger than food for me?"
-     - Fibromyalgia: "Do my low-sleep days become high-pain days?" / "What's my worst symptom been this month?"
-   - Beneath the question: a greyed "answer preview" - 3 skeleton bars (NOT fake text, NOT lorem ipsum - just the visual shape of an answer lines). Gradient pulse at 2s cycle, same shimmer spec as loading states.
-   - Footer inside the card (DM Sans 12px `--text-secondary`): "Your personal AI unlocks when your data has enough signal to answer you well."
-   - The card is NOT tappable (nothing to reveal yet). No padlock icon - this is a preview, not a wall.
+- Double-bezel container at top of page
+- Eyebrow pill - neutral variant for `none/seedling/growing`, accent variant for `mature`
+- Fraunces 26px weight 400, single sentence from `computeProgressiveInsight(logs, conditions).headline`
+- No CTA - the card is a statement, not a button. The Timeline below it is the evidence.
 
-3. **ProgressToUnlock** (quiet, single-line strip below the AI card)
-   - Thin row, no card container, just text and a hairline progress indicator
-   - Left: DM Mono 11px `--text-secondary`: "{loggedDaysCount} of 14 days" or "{totalLogEntries} of 20 logs" (pick whichever gate is further from being met)
-   - Right: 2px horizontal progress line, width 80px, `--border` track with `--accent` fill
-   - No percentage label, no animation on mount beyond scroll-entry blur
-   - Absent entirely in State A
+**SleuthNoticedCard (seedling and growing levels):**
 
-Note: Community is shown in the **Community segment tab** (accessible via the segmented control), not inline below the AI content. The AI segment in State B shows only the AIPreviewCard and ProgressToUnlock strip.
+- Double-bezel container, accent-light "WHAT SLEUTH HAS NOTICED" eyebrow
+- Fraunces 22px line: "{N} days of patterns so far."
+- Bulleted list (max 3) from `computeSleuthNoticedBullets()` - sage-green dot bullets, DM Sans 14px
+- Footer: "Sleuth's chat unlocks in {X} days. Keep logging to fill the page." - or "Sleuth's chat is ready when you are." once `daysRemaining === 0`
+- "Unlock Sleuth chat" CTA appears only when threshold is met but the user is not premium (this state would normally route through `AILockedPreview`; CTA here is defensive)
 
-State B is available to ALL users regardless of premium status.
+**AIChat component (`components/insights/AIChat.tsx`)** - mature + premium:
 
-**State C - Day 14+ threshold met, user is premium (trial or paid)**
+- Double-bezel container; "SLEUTH" eyebrow (accent variant)
+- "New conversation" text button top-right (DM Sans 12px `--text-secondary`); clears session, no confirmation
+- Conversation: user turns right-aligned (no avatar/timestamp); AI turns left-aligned, prefixed with an 8px `--accent` dot. 16px between turns. Inline severity glyphs substituted for "Mild/Medium/Severe/Extreme" mentions.
+- Bottom input: 3 horizontally-scrolling suggested prompt chips; multiline auto-grow textarea (max 4 visible lines); trailing `--accent` button-in-button send button
+- First-open empty state: Fraunces 22px "Your sleuth works for you." + DM Sans 14px secondary explainer + 3 starter chips + safety footnote
+- Rate-limit UI (20/24h hit): textarea replaced with reset countdown - no upgrade CTA
 
-The AIPreviewCard transforms into the live **AIChat** surface. Community is in the Community segment tab - the AI segment in State C shows only the AIChat component.
+**AILockedPreview (`components/insights/AILockedPreview.tsx`)** - mature + non-premium:
 
-**AIChat component (`components/insights/AIChat.tsx`):**
-
-- Double-bezel container - same outer dimensions as AIPreviewCard so the lock→live transition feels like the card "came online" rather than a new component appearing
-- Eyebrow pill (accent variant - `bg-[--accent-light]` with `text-[--accent]`): "SLEUTH"
-- Top-right inside the card: "New conversation" text button, DM Sans 12px `--text-secondary`, clears current session. No confirmation modal.
-- Conversation area (max-height 480px, scroll-y; most recent turn at bottom, auto-scrolls on new message):
-  - **User turns:** right-aligned, DM Sans 15px `--text-primary`, no background, left-padding of 48px so user text reads as quoted. No avatar, no label, no timestamp.
-  - **AI turns:** left-aligned, DM Sans 15px `--text-primary`, prefix with a small `--accent`-colored dot (8px) as the speaker indicator. No avatar, no "Sleuth says" label.
-  - Between turns: 16px vertical gap. Inside a turn: paragraphs separate with 8px gap.
-  - AI responses may contain inline severity references - render the Severity Glyph inline where the AI response text mentions a specific severity level (the API post-processor handles this substitution).
-- Bottom input area (anchored to card bottom):
-  - Above the textarea: 3 suggested prompt chips, horizontally scrolling row on mobile. Tapping a chip fills the textarea AND immediately sends (one deliberate tap). Chips use the same double-bezel visual language as severity chips but are tap-to-submit actions.
-  - Multiline textarea with auto-grow (max 4 lines visible), placeholder cycles through condition-specific prompts
-  - Trailing send button inside the textarea bezel (button-in-button style, `--accent` fill, Phosphor ArrowUp 14px weight light)
-- Empty state (first open, `aiConversationCount === 0`):
-  - Fraunces 22px: "Your sleuth works for you."
-  - DM Sans 14px `--text-secondary`: "Ask about your patterns, triggers, or symptoms. Sleuth reads your {loggedDaysCount} days of data - never your notes field unless you ask."
-  - Three starter chips beneath
-  - Footnote (DM Sans 11px `--text-secondary`): "Sleuth is not a doctor. For medical decisions, use the Doctor Report and see your clinician."
-
-**Rate limit UI (when 20/24h cap hit):**
-- Input area replaced with a centered message: "You've asked 20 questions in the last day. Sleuth resets in {Xh Ym}."
-- DM Sans 14px `--text-secondary`, no CTA, no upgrade push
-- Countdown recomputes on each render from `profile.aiUsage.messages[]`
-
-**State D - Day 14+ threshold met, user is NOT premium (trial expired, no active subscription)**
-
-The AIChat card is present but locked. This is a stronger paywall than the generic Upgrade screen because the user sees their *own data* being reasoned about, not a generic feature list.
-
-- Same double-bezel container as States B and C (consistent card shape across all states)
-- Eyebrow pill (accent-light variant): "SLEUTH - UNLOCKED, READY WHEN YOU ARE"
-- Fraunces 22px weight 400: a pre-computed sample insight derived from the user's actual data, e.g.:
-  - "You've logged 18 days. Your severity trends upward on low-sleep nights."
-  - "Your migraines cluster on days you logged dairy."
-  - "Stress appears in 60% of your high-severity entries."
-- This insight is generated client-side from simple statistics in `utils/aiPreviewStats.ts` - zero Claude API spend on non-premium users.
-- Below: a three-line "answer preview" - first ~40 words of what a correlation response might look like, first line fully readable, next two lines blurred via `filter: blur(4px)`.
-- Primary CTA (sage green button-in-button, trailing arrow): "Unlock Sleuth" → routes to /upgrade
-- Secondary text beneath (DM Sans 12px `--text-secondary`): "Your 14 days of data stay private. Sleuth only reads what you ask it to see."
-- Community is always available in the Community segment tab - free tier users keep community access.
+- Same double-bezel shell as AIChat (the lock→live transition feels like the card "came online")
+- Fraunces 22px insight from `computePreviewInsight()` (thin wrapper over `computeProgressiveInsight()` for legacy callers)
+- 3-line answer preview: first line readable, next two blurred via `filter: blur(4px)`
+- Primary CTA "Unlock Sleuth" → `/upgrade`
+- Trust footnote: "Your 14 days of data stay private. Sleuth only reads what you ask it to see."
 
 **5. Doctor Report**
 
@@ -1123,8 +1109,9 @@ components/
     FoodTriggers.tsx          # 2-col chip grid, open by default, stores context.foodTriggers
     ContextFields.tsx
     ToggleSwitch.tsx          # Boolean toggle used for the lone yes/no context field (exercise).
-    SaveConfirmModal.tsx      # bottom sheet post-save modal, double-bezel, drain bar, random logMessage, streak pill
+    SaveConfirmModal.tsx      # bottom sheet post-save modal, double-bezel, drain bar, random logMessage, streak pill, optional `delta` prop for data-derived insights
     Marginalia.tsx            # Right-aligned DM Mono micro-stat for symptom rows with ≥3 data points
+    InsightStrip.tsx          # Above-the-fold lead surface on the Log screen - tappable card driven by progressiveInsightLevel + computeProgressiveInsight()
   ui/
     StreakBadge.tsx           # fixed-position streak overlay on app header, rendered in (app)/layout.tsx
     PaperGround.tsx           # SVG noise overlay at --paper-noise-opacity, applied once in app shell root
@@ -1135,14 +1122,17 @@ components/
     ServiceWorkerRegister.tsx # Client-side registration for /public/sw.js.
   timeline/
     TimelineChart.tsx
-    DateRangeSelector.tsx
+    DateRangeSelector.tsx     # 4-chip row using the SeverityChipSelector visual language (replaces underline tabs)
+    TimelineSummary.tsx       # Fraunces 18px headline above the chart - the chart's verbal answer
     DailyLogList.tsx
-    TimelineSegment.tsx       # Composable wrapper - combines the three above; rendered inside Insights as the default segment
+    TimelineSegment.tsx       # Composable wrapper - rendered inside Insights as the second stacked section
   insights/
-    AIPreviewCard.tsx         # State B: locked AI card with rotating sample question + skeleton answer preview
-    ProgressToUnlock.tsx      # State B: quiet single-line strip showing loggedDays/totalLogs progress toward threshold
-    AIChat.tsx                # State C: live AI chat surface - conversation area + input + suggested prompts
-    AILockedPreview.tsx       # State D: post-threshold, non-premium paywall with data-derived teaser
+    InsightHeadlineCard.tsx   # Lead element on Insights - Fraunces 26px headline from computeProgressiveInsight()
+    SleuthNoticedCard.tsx     # "What Sleuth has noticed" accrual card for seedling/growing levels (replaces AIPreviewCard role)
+    AIPreviewCard.tsx         # LEGACY - kept for callers; no longer mounted by the Insights page
+    ProgressToUnlock.tsx      # LEGACY - kept for callers; no longer mounted by the Insights page
+    AIChat.tsx                # Mature + premium: live AI chat surface
+    AILockedPreview.tsx       # Mature + non-premium: data-derived teaser + blurred preview + upgrade CTA
     CommunityOverview.tsx
     PatternComparison.tsx
     CorrelationCard.tsx
@@ -1157,7 +1147,7 @@ hooks/
   useTrial.ts
   useCommunity.ts
   useInView.ts              # IntersectionObserver hook for scroll entry animations
-  useAIAccess.ts            # { isAIThresholdMet, hasAIAccess, daysRemaining, logsRemaining, aiUnlockedAt } - consumed by Insights screen to route between States A/B/C/D
+  useAIAccess.ts            # { isAIThresholdMet, hasAIAccess, daysRemaining, logsRemaining, aiUnlockedAt, progressiveInsightLevel } - drives the InsightStrip on Log, the SleuthNoticedCard on Insights, and the chat unlock
   useAIChat.ts              # Chat state management - turns, rate limit counter, send function, streaming response handler
 utils/
   storage.ts
@@ -1167,7 +1157,7 @@ utils/
   community.ts
   logMessages.ts            # 40 post-save messages (15 encouraging, 15 tips, 10 insight). pickRandomMessage().
   aiSystemPrompt.ts         # System prompt for /api/ai-chat - medical safety scaffolding, pattern framing, emergency redirect rules
-  aiPreviewStats.ts         # Client-side computation of data-derived teaser insights for State D. Zero API spend. Used by AILockedPreview.
+  aiPreviewStats.ts         # Client-side stats engine: computeProgressiveInsight, computePostSaveDelta, computeTimelineSummary, computeSleuthNoticedBullets. Powers InsightStrip, SaveConfirmModal delta, TimelineSummary, SleuthNoticedCard, and AILockedPreview. Zero API spend.
   migrateLocalData.ts       # One-shot migration from localStorage to Supabase after account setup at /welcome. Keeps localStorage on failure.
   hydrateFromSupabase.ts    # Inverse of migrateLocalData - pulls server profile back into local state on sign-in from a fresh device.
   generateDemoData.ts       # Seeded demo data generator used in development and onboarding previews.
